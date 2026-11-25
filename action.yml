@@ -38,7 +38,7 @@ runs:
       run: |
         set -u
         tool="$GITHUB_ACTION_PATH/skill-rentgen/skills/skill-rentgen/scripts/skill_rentgen.py"
-        out="$RUNNER_TEMP/skill-rentgen-report"
+        out="$(mktemp -d "$RUNNER_TEMP/skill-rentgen-report-XXXXXX")"
         code=0
         python3 "$tool" scan "$SR_PATH" --lang "$SR_LANG" --fail-on "$SR_FAIL_ON" --out "$out" || code=$?
         echo "report=$out" >> "$GITHUB_OUTPUT"

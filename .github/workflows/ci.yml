@@ -14,8 +14,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python: ["3.9", "3.13"]
+        # 3.9 is the python3 that ships with macOS, so that is where the floor is tested.
+        include:
+          - {os: ubuntu-latest, python: "3.13"}
+          - {os: macos-latest, python: "3.13"}
+          - {os: macos-latest, python: "3.9"}
     env:
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
