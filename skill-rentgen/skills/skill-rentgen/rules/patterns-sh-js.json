@@ -1,0 +1,228 @@
+{
+ "rules_version": "2026.11.1",
+ "note": "Shell and JavaScript are analysed by these patterns only. Findings carry confidence low.",
+ "shell": [
+  {
+   "id": "sh.pipe-shell",
+   "obs": "remote_exec",
+   "re": "\\b(?:curl|wget|fetch)\\b(?:[^|;\\n]{0,300}?(https?://[^\\s|\\\"'`)]+))?[^|;\\n]{0,200}\\|\\s*(?:sudo\\s+)?(?:env\\s+[^|]*\\s)?(?:ba|z|da|k)?sh\\b"
+  },
+  {
+   "id": "sh.subst-shell",
+   "obs": "remote_exec",
+   "re": "\\b(?:ba|z)?sh\\s+(?:-c\\s+)?[\\\"']?(?:<\\(|\\$\\()\\s*(?:curl|wget)\\b(?:[^)\\n]{0,300}?(https?://[^\\s\\\"'`)]+))?"
+  },
+  {
+   "id": "sh.eval-curl",
+   "obs": "remote_exec",
+   "re": "\\b(?:eval|source|\\.)\\s+[\\\"']?(?:<\\(|\\$\\()\\s*(?:curl|wget)\\b(?:[^)\\n]{0,300}?(https?://[^\\s\\\"'`)]+))?"
+  },
+  {
+   "id": "sh.py-curl",
+   "obs": "remote_exec",
+   "re": "\\b(?:python3?|node|ruby|perl)\\s+(?:-c|-e)\\s+[\\\"']?\\$\\(\\s*(?:curl|wget)\\b(?:[^)\\n]{0,300}?(https?://[^\\s\\\"'`)]+))?"
+  },
+  {
+   "id": "sh.pipe-interp",
+   "obs": "remote_exec",
+   "re": "\\b(?:curl|wget)\\b(?:[^|;\\n]{0,300}?(https?://[^\\s|\\\"'`)]+))?[^|;\\n]{0,200}\\|\\s*(?:sudo\\s+)?(?:python3?|node|ruby|perl|php)\\b(?!\\s+-m\\s+json)"
+  },
+  {
+   "id": "sh.b64-shell",
+   "obs": "encoded_exec",
+   "re": "\\b(?:base64\\s+(?:-d|-D|--decode)|xxd\\s+-r(?:\\s+-p)?|openssl\\s+(?:enc\\s+)?(?:-d\\s+)?-?base64\\s+-d)\\b[^|\\n]{0,80}\\|\\s*(?:sudo\\s+)?(?:(?:ba|z)?sh|python3?|node|perl)\\b"
+  },
+  {
+   "id": "ps.iex",
+   "obs": "remote_exec",
+   "re": "\\b(?:iex|Invoke-Expression)\\b[^\\n]{0,80}\\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod|DownloadString)\\b(?:[^\\n]{0,200}?(https?://[^\\s\\\"'`)]+))?"
+  },
+  {
+   "id": "sh.cred-read",
+   "obs": "cred_read",
+   "re": "\\b(?:cat|less|more|head|tail|base64|xxd|od|strings|cp|scp|rsync|tar|zip|gzip|openssl|nc|ncat|grep|awk|sed)\\b[^\\n|;]{0,160}(?:~|\\$HOME|\\$\\{HOME\\}|/Users/[^/\\s\\\"']+|/home/[^/\\s\\\"']+|/root)/(?:\\.ssh/(?:id_[a-z0-9_]+|[\\w.-]*key[\\w.-]*|identity)\\b|\\.aws/credentials|\\.gnupg\\b|\\.netrc\\b|\\.config/gh/hosts\\.yml|\\.docker/config\\.json|\\.kube/config|\\.git-credentials|\\.npmrc\\b|\\.pypirc\\b|\\.claude/\\.credentials\\.json|\\.claude\\.json\\b|\\.gemini/oauth_creds\\.json|\\.config/gcloud/(?:credentials|application_default)|Library/Keychains|\\.bitcoin/wallet|\\.ethereum/keystore)"
+  },
+  {
+   "id": "sh.cred-upload",
+   "obs": "cred_read",
+   "re": "\\bcurl\\b[^\\n]{0,200}(?:-d|--data(?:-binary)?|-F|--form|-T|--upload-file)\\s*[\\\"']?@?[^\\n]{0,40}(?:\\.ssh/(?:id_[a-z0-9_]+|identity)\\b|\\.aws/credentials|\\.netrc\\b|\\.config/gh/hosts\\.yml|\\.git-credentials|\\.claude/\\.credentials\\.json|Library/Keychains|\\.gnupg/(?:private|secring))"
+  },
+  {
+   "id": "sh.keychain",
+   "obs": "cred_read",
+   "re": "\\bsecurity\\s+(?:find-generic-password|find-internet-password|dump-keychain)\\b|\\bgpg\\s+[^\\n]{0,60}--export-secret"
+  },
+  {
+   "id": "sh.env-exfil",
+   "obs": "cred_read",
+   "re": "\\b(?:printenv|env|set)\\s*\\|\\s*[^\\n]{0,60}\\b(?:curl|wget|nc|ncat)\\b"
+  },
+  {
+   "id": "sh.cred-ref",
+   "obs": "cred_ref",
+   "re": "(?:~|\\$HOME|\\$\\{HOME\\}|/Users/[^/\\s\\\"']+|/home/[^/\\s\\\"']+|/root)/(?:\\.ssh/(?:id_[a-z0-9_]+|[\\w.-]*key[\\w.-]*|identity)\\b|\\.aws/credentials|\\.gnupg\\b|\\.netrc\\b|\\.config/gh/hosts\\.yml|\\.docker/config\\.json|\\.kube/config|\\.git-credentials|\\.npmrc\\b|\\.pypirc\\b|\\.claude/\\.credentials\\.json|\\.claude\\.json\\b|\\.gemini/oauth_creds\\.json|\\.config/gcloud/(?:credentials|application_default)|Library/Keychains|\\.bitcoin/wallet|\\.ethereum/keystore)"
+  },
+  {
+   "id": "sh.settings-write",
+   "obs": "settings_write",
+   "re": "(?:>>?|\\btee\\b(?:\\s+-a)?|\\bcp\\b[^\\n]{0,120}|\\bmv\\b[^\\n]{0,120}|\\bsed\\s+-i[^\\n]{0,160}|\\binstall\\b[^\\n]{0,80})\\s*[\\\"']?[^\\s\\\"']{0,80}(?:\\.claude/settings(?:\\.local)?\\.json|\\.claude\\.json\\b|\\.gemini/settings\\.json|\\.codex/config\\.toml|\\.cursor/mcp\\.json|\\.config/claude/[\\w.-]+\\.json)"
+  },
+  {
+   "id": "sh.otherskill-write",
+   "obs": "otherskill_write",
+   "re": "(?:>>?|\\btee\\b(?:\\s+-a)?|\\bcp\\b[^\\n]{0,160}|\\bmv\\b[^\\n]{0,160}|\\bln\\s+-s[^\\n]{0,160}|\\brm\\s+-r?f?[^\\n]{0,40}|\\bmkdir\\b[^\\n]{0,40})\\s*[\\\"']?(?:~|\\$HOME|\\$\\{HOME\\})/\\.(?:claude|agents|gemini|codex|cursor)/(?:skills|plugins|agents|commands|hooks)/"
+  },
+  {
+   "id": "sh.skip-perms",
+   "obs": "skip_perms",
+   "re": "--dangerously-skip-permissions\\b|--allow-dangerously-skip-permissions\\b|\\bbypassPermissions\\b|\\bdangerouslyDisableSandbox\\b|--yolo\\b"
+  },
+  {
+   "id": "sh.install",
+   "obs": "install",
+   "re": "\\b(?:pip3?|python3?\\s+-m\\s+pip|uv\\s+pip)\\s+install\\b|\\buv\\s+add\\b|\\bpoetry\\s+add\\b|\\b(?:npm|pnpm|yarn|bun)\\s+(?:i|install|add)\\b|\\bbrew\\s+install\\b|\\bapt(?:-get)?\\s+install\\b|\\bgem\\s+install\\b|\\bcargo\\s+install\\b|\\bgo\\s+install\\b|\\b(?:npx|uvx|bunx|pipx)\\s"
+  },
+  {
+   "id": "sh.net",
+   "obs": "network",
+   "re": "\\b(?:curl|wget|nc|ncat|ssh|scp|sftp|rsync|ftp|telnet|http|https)\\b[^\\n]{0,200}?(https?://[^\\s\\\"'`)<>]+)"
+  },
+  {
+   "id": "sh.net-bare",
+   "obs": "network_dyn",
+   "re": "\\b(?:curl|wget)\\s+(?!--version|-V\\b|--help)(?:-[^\\s]+\\s+)*[\\\"']?\\$[\\{\\(]?\\w+"
+  },
+  {
+   "id": "sh.git-clone",
+   "obs": "network",
+   "re": "\\bgit\\s+clone\\b[^\\n]{0,80}?(https?://[^\\s\\\"'`)]+|git@[^\\s\\\"'`)]+)"
+  },
+  {
+   "id": "sh.registry-file",
+   "obs": "registry",
+   "re": "^\\s*(?:@[\\w.-]+:)?registry\\s*=\\s*[\\\"']?(https?://[^\\s\\\"']+)"
+  },
+  {
+   "id": "sh.registry-set",
+   "obs": "registry",
+   "re": "\\b(?:npm|pnpm|yarn|bun)\\s+config\\s+set\\s+(?:@[\\w.-]+:)?registry\\s+[\\\"']?(https?://[^\\s\\\"']+)"
+  },
+  {
+   "id": "sh.registry-flag",
+   "obs": "registry",
+   "re": "(?:--registry|--index-url|--extra-index-url|--default-index|--index)(?:=|\\s+)[\\\"']?(https?://[^\\s\\\"']+)"
+  },
+  {
+   "id": "sh.registry-env",
+   "obs": "registry",
+   "re": "\\b(?:PIP_INDEX_URL|PIP_EXTRA_INDEX_URL|UV_INDEX_URL|UV_DEFAULT_INDEX|UV_EXTRA_INDEX_URL|NPM_CONFIG_REGISTRY|npm_config_registry|YARN_REGISTRY)\\s*=\\s*[\\\"']?(https?://[^\\s\\\"']+)"
+  },
+  {
+   "id": "sh.registry-pip",
+   "obs": "registry",
+   "re": "^\\s*(?:index-url|extra-index-url|index_url)\\s*=\\s*[\\\"']?(https?://[^\\s\\\"']+)"
+  },
+  {
+   "id": "sh.install-url",
+   "obs": "install_url",
+   "re": "\\b(?:pip3?|python3?\\s+-m\\s+pip|uv\\s+pip|pipx|uv\\s+tool|npm|pnpm|yarn|bun)\\s+(?:install|i|add)\\b[^\\n|;&]{0,120}?[\\s\\\"'](?:git\\+)?(https?://[^\\s\\\"'`)]+)"
+  },
+  {
+   "id": "sh.encoded-eval",
+   "obs": "encoded_exec",
+   "re": "\\b(?:eval|(?:ba|z)?sh\\s+-c|source|\\.)\\s+[\\\"']?\\$\\(\\s*(?:echo|printf)\\b[^)\\n]{0,6000}\\|\\s*(?:base64\\s+(?:-d|-D|--decode)|xxd\\s+-r)"
+  },
+  {
+   "id": "sh.encoded-py",
+   "obs": "encoded_exec",
+   "re": "\\bexec\\s*\\(\\s*(?:__import__\\(\\s*[\\\"']base64[\\\"']\\s*\\)|base64)\\.b(?:64|32|16)decode\\s*\\("
+  },
+  {
+   "id": "sh.quarantine",
+   "obs": "quarantine",
+   "re": "\\bxattr\\s+(?:-[a-z]*\\s+)*-d\\s+(?:-[a-z]+\\s+)*com\\.apple\\.quarantine|\\bxattr\\s+-(?:c|cr|rc)\\s+[^\\n]{0,160}\\.(?:app|dmg|pkg)\\b|\\bspctl\\s+--(?:master-disable|global-disable)\\b"
+  },
+  {
+   "id": "sh.password-dialog",
+   "obs": "password_prompt",
+   "re": "display\\s+dialog[^\\n]{0,400}hidden\\s+answer|\\bdscl\\s+\\S+\\s+-authonly\\b"
+  }
+ ],
+ "js": [
+  {
+   "id": "js.remote-eval",
+   "obs": "remote_exec",
+   "re": "\\b(?:eval|Function)\\s*\\(\\s*(?:await\\s+)?\\(?\\s*(?:await\\s+)?fetch\\s*\\(\\s*[\\\"'`](https?://[^\\\"'`]+)?"
+  },
+  {
+   "id": "js.exec-curl",
+   "obs": "remote_exec",
+   "re": "\\b(?:exec|execSync|spawn|spawnSync)\\s*\\(\\s*[\\\"'`][^\\\"'`\\n]{0,200}\\b(?:curl|wget)\\b[^\\\"'`\\n]{0,200}\\|\\s*(?:ba|z)?sh\\b"
+  },
+  {
+   "id": "js.child",
+   "obs": "exec",
+   "re": "\\b(?:child_process|execSync|spawnSync|execFile(?:Sync)?)\\b|\\bBun\\.spawn|\\bDeno\\.(?:run|Command)\\b"
+  },
+  {
+   "id": "js.eval",
+   "obs": "dyn_exec",
+   "re": "(?<![.\\w])eval\\(\\s*(?![\\\"'`)\\s])|\\bnew\\s+Function\\(\\s*(?![\\\"'`]\\s*\\))"
+  },
+  {
+   "id": "js.net",
+   "obs": "network",
+   "re": "\\b(?:fetch|axios(?:\\.\\w+)?|got(?:\\.\\w+)?|request|https?\\.(?:get|request)|WebSocket|EventSource)\\s*\\(\\s*[\\\"'`](https?://[^\\\"'`\\s]+|wss?://[^\\\"'`\\s]+)"
+  },
+  {
+   "id": "js.net-dyn",
+   "obs": "network_dyn",
+   "re": "\\b(?:fetch|axios\\.(?:get|post|put|request)|https?\\.(?:get|request))\\s*\\(\\s*(?![\\\"'`])[A-Za-z_$]"
+  },
+  {
+   "id": "js.cred-read",
+   "obs": "cred_read",
+   "re": "\\b(?:readFile(?:Sync)?|createReadStream|readTextFile)\\s*\\([^\\n]{0,200}(?:\\.ssh/(?:id_[a-z0-9_]+|identity)\\b|\\.aws/credentials|\\.netrc\\b|\\.config/gh/hosts\\.yml|\\.git-credentials|\\.claude/\\.credentials\\.json|Library/Keychains|\\.gnupg/(?:private|secring))"
+  },
+  {
+   "id": "js.cred-ref",
+   "obs": "cred_ref",
+   "re": "(?:\\.ssh/(?:id_[a-z0-9_]+|identity)\\b|\\.aws/credentials|\\.netrc\\b|\\.config/gh/hosts\\.yml|\\.git-credentials|\\.claude/\\.credentials\\.json|Library/Keychains|\\.gnupg/(?:private|secring))"
+  },
+  {
+   "id": "js.settings-write",
+   "obs": "settings_write",
+   "re": "\\b(?:writeFile(?:Sync)?|appendFile(?:Sync)?|writeTextFile)\\s*\\([^)\\n]{0,200}(?:settings(?:\\.local)?\\.json|\\.claude\\.json)"
+  },
+  {
+   "id": "js.env",
+   "obs": "env",
+   "re": "\\bprocess\\.env\\.([A-Z][A-Z0-9_]{2,})|\\bprocess\\.env\\[\\s*[\\\"']([A-Z][A-Z0-9_]{2,})[\\\"']\\s*\\]|\\bDeno\\.env\\.get\\(\\s*[\\\"']([A-Z][A-Z0-9_]{2,})"
+  },
+  {
+   "id": "js.skip-perms",
+   "obs": "skip_perms",
+   "re": "dangerously-skip-permissions|bypassPermissions|dangerouslyDisableSandbox"
+  },
+  {
+   "id": "js.env-all",
+   "obs": "env_all",
+   "re": "\\bJSON\\.stringify\\(\\s*process\\.env\\s*[,)]|\\bObject\\.(?:entries|keys|values|assign)\\(\\s*(?:\\{\\}\\s*,\\s*)?process\\.env\\s*\\)|\\.\\.\\.process\\.env\\b(?=[^\\n]{0,80}(?:fetch|axios|http|body))"
+  },
+  {
+   "id": "js.cred-split",
+   "obs": "cred_read",
+   "re": "(?:homedir\\s*\\(\\s*\\)|process\\.env\\.HOME|process\\.env\\.USERPROFILE)[^\\n]{0,80}[\\\"'`](?:\\.ssh|\\.aws|\\.gnupg|\\.kube|\\.docker)[\\\"'`]\\s*,\\s*[\\\"'`](?:id_[a-z0-9_]+|credentials|identity|config(?:\\.json)?)[\\\"'`]"
+  },
+  {
+   "id": "js.encoded-exec",
+   "obs": "encoded_exec",
+   "re": "\\b(?:eval|Function)\\s*\\(\\s*(?:atob\\s*\\(|Buffer\\.from\\s*\\([^)\\n]{0,6000},\\s*[\\\"']base64[\\\"']\\s*\\))"
+  },
+  {
+   "id": "js.password-dialog",
+   "obs": "password_prompt",
+   "re": "display\\s+dialog[^\\n]{0,400}hidden\\s+answer"
+  }
+ ]
+}

@@ -1,0 +1,1855 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "additionalProperties": false,
+ "not": {
+  "anyOf": [
+   {
+    "allOf": [
+     {
+      "properties": {
+       "assert": {
+        "contains": {
+         "properties": {
+          "no_delete_in_outputs": {}
+         },
+         "required": [
+          "no_delete_in_outputs"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       }
+      },
+      "required": [
+       "assert"
+      ],
+      "type": "object"
+     },
+     {
+      "properties": {
+       "assert": {
+        "contains": {
+         "properties": {
+          "allow_outputs_delete": {}
+         },
+         "required": [
+          "allow_outputs_delete"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       }
+      },
+      "required": [
+       "assert"
+      ],
+      "type": "object"
+     }
+    ]
+   },
+   {
+    "allOf": [
+     {
+      "properties": {
+       "assert": {
+        "contains": {
+         "properties": {
+          "no_delete_in_outputs": {}
+         },
+         "required": [
+          "no_delete_in_outputs"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       }
+      },
+      "required": [
+       "assert"
+      ],
+      "type": "object"
+     },
+     {
+      "properties": {
+       "assert": {
+        "contains": {
+         "properties": {
+          "allow_delete_in": {
+           "contains": {
+            "const": "outputs"
+           },
+           "type": "array"
+          }
+         },
+         "required": [
+          "allow_delete_in"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       }
+      },
+      "required": [
+       "assert"
+      ],
+      "type": "object"
+     }
+    ]
+   },
+   {
+    "not": {
+     "properties": {
+      "fidelity": {
+       "const": "container"
+      },
+      "lane": {
+       "const": "remote"
+      }
+     },
+     "required": [
+      "lane",
+      "fidelity"
+     ],
+     "type": "object"
+    },
+    "properties": {
+     "device_bridge": {
+      "const": true
+     }
+    },
+    "required": [
+     "device_bridge"
+    ],
+    "type": "object"
+   }
+  ]
+ },
+ "properties": {
+  "allow_host_hooks": {
+   "type": "boolean"
+  },
+  "allow_host_writes": {
+   "type": "boolean"
+  },
+  "answers": {
+   "default": [],
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "allow_if": {
+      "type": "string"
+     },
+     "answer": {
+      "type": "string"
+     },
+     "choose": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       }
+      ]
+     },
+     "decide": {
+      "enum": [
+       "allow",
+       "deny"
+      ],
+      "type": "string"
+     },
+     "else": {
+      "enum": [
+       "allow",
+       "deny"
+      ],
+      "type": "string"
+     },
+     "grant": {
+      "enum": [
+       "once",
+       "domain"
+      ],
+      "type": "string"
+     },
+     "when_question": {
+      "type": "string"
+     },
+     "when_tool": {
+      "type": "string"
+     }
+    },
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "assert": {
+   "default": [],
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "all_tasks_completed": {
+      "const": true,
+      "type": "boolean"
+     },
+     "allow_delete_in": {
+      "items": {
+       "minLength": 1,
+       "type": "string"
+      },
+      "minItems": 1,
+      "type": "array"
+     },
+     "allow_max_turns": {
+      "const": true,
+      "type": "boolean"
+     },
+     "allow_missing_capability": {
+      "const": true,
+      "type": "boolean"
+     },
+     "allow_outputs_delete": {
+      "const": true,
+      "type": "boolean"
+     },
+     "allow_permissive_auto_allow": {
+      "const": true,
+      "type": "boolean"
+     },
+     "allow_stall": {
+      "const": true,
+      "type": "boolean"
+     },
+     "allow_undelivered_deliverables": {
+      "const": true,
+      "type": "boolean"
+     },
+     "artifact_json": {
+      "additionalProperties": false,
+      "properties": {
+       "absent": {
+        "type": "boolean"
+       },
+       "artifact": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "authored": {
+        "type": "boolean"
+       },
+       "equals": {},
+       "exists": {
+        "type": "boolean"
+       },
+       "gt": {
+        "type": "number"
+       },
+       "in": {
+        "items": {},
+        "type": "array"
+       },
+       "is_null": {
+        "type": "boolean"
+       },
+       "match": {
+        "enum": [
+         "each",
+         "any"
+        ],
+        "type": "string"
+       },
+       "path": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "schema": {
+        "anyOf": [
+         {
+          "additionalProperties": false,
+          "properties": {
+           "file": {
+            "minLength": 1,
+            "type": "string"
+           }
+          },
+          "required": [
+           "file"
+          ],
+          "type": "object"
+         },
+         {
+          "additionalProperties": {},
+          "propertyNames": {
+           "type": "string"
+          },
+          "type": "object"
+         }
+        ]
+       }
+      },
+      "required": [
+       "artifact"
+      ],
+      "type": "object"
+     },
+     "artifact_text": {
+      "additionalProperties": false,
+      "properties": {
+       "artifact": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "authored": {
+        "type": "boolean"
+       },
+       "contains": {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       },
+       "matches": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "not_contains": {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       },
+       "not_matches": {
+        "minLength": 1,
+        "type": "string"
+       }
+      },
+      "required": [
+       "artifact"
+      ],
+      "type": "object"
+     },
+     "compaction_occurred": {
+      "const": true,
+      "type": "boolean"
+     },
+     "computer_links_resolve": {
+      "const": true,
+      "type": "boolean"
+     },
+     "computer_links_resolve_if_present": {
+      "const": true,
+      "type": "boolean"
+     },
+     "connector_available": {
+      "type": "string"
+     },
+     "dispatch_count_max": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "egress_allowed": {
+      "type": "string"
+     },
+     "egress_denied": {
+      "type": "string"
+     },
+     "file_absent": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "file_exists": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "additionalProperties": false,
+        "properties": {
+         "authored": {
+          "type": "boolean"
+         },
+         "path": {
+          "minLength": 1,
+          "type": "string"
+         }
+        },
+        "required": [
+         "path"
+        ],
+        "type": "object"
+       }
+      ]
+     },
+     "gate_answer_count_min": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "gate_answers_delivered": {
+      "type": "boolean"
+     },
+     "gates_all_scripted": {
+      "anyOf": [
+       {
+        "const": true,
+        "type": "boolean"
+       },
+       {
+        "additionalProperties": false,
+        "properties": {
+         "include_permissions": {
+          "type": "boolean"
+         }
+        },
+        "type": "object"
+       }
+      ]
+     },
+     "hook_blocked": {
+      "type": "string"
+     },
+     "hook_decision": {
+      "additionalProperties": false,
+      "properties": {
+       "decision": {
+        "enum": [
+         "allow",
+         "deny",
+         "ask",
+         "defer",
+         "block",
+         "approve"
+        ],
+        "type": "string"
+       },
+       "event": {
+        "enum": [
+         "PreToolUse",
+         "PostToolUse",
+         "PostToolUseFailure",
+         "PostToolBatch",
+         "Notification",
+         "UserPromptSubmit",
+         "UserPromptExpansion",
+         "SessionStart",
+         "SessionEnd",
+         "Stop",
+         "StopFailure",
+         "SubagentStart",
+         "SubagentStop",
+         "PreCompact",
+         "PostCompact",
+         "PreModelSwitch",
+         "PostModelSwitch",
+         "PermissionRequest",
+         "PermissionDenied",
+         "Setup",
+         "TeammateIdle",
+         "TaskCreated",
+         "TaskCompleted",
+         "Elicitation",
+         "ElicitationResult",
+         "ConfigChange",
+         "WorktreeCreate",
+         "WorktreeRemove",
+         "InstructionsLoaded",
+         "CwdChanged",
+         "FileChanged",
+         "DirectoryAdded",
+         "MessageDisplay"
+        ],
+        "type": "string"
+       },
+       "max": {
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "min": {
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "tool": {
+        "minLength": 1,
+        "type": "string"
+       }
+      },
+      "required": [
+       "event",
+       "decision"
+      ],
+      "type": "object"
+     },
+     "hook_event_blocked": {
+      "anyOf": [
+       {
+        "enum": [
+         "PreToolUse",
+         "PostToolUse",
+         "PostToolUseFailure",
+         "PostToolBatch",
+         "Notification",
+         "UserPromptSubmit",
+         "UserPromptExpansion",
+         "SessionStart",
+         "SessionEnd",
+         "Stop",
+         "StopFailure",
+         "SubagentStart",
+         "SubagentStop",
+         "PreCompact",
+         "PostCompact",
+         "PreModelSwitch",
+         "PostModelSwitch",
+         "PermissionRequest",
+         "PermissionDenied",
+         "Setup",
+         "TeammateIdle",
+         "TaskCreated",
+         "TaskCompleted",
+         "Elicitation",
+         "ElicitationResult",
+         "ConfigChange",
+         "WorktreeCreate",
+         "WorktreeRemove",
+         "InstructionsLoaded",
+         "CwdChanged",
+         "FileChanged",
+         "DirectoryAdded",
+         "MessageDisplay"
+        ],
+        "type": "string"
+       },
+       {
+        "additionalProperties": false,
+        "properties": {
+         "event": {
+          "enum": [
+           "PreToolUse",
+           "PostToolUse",
+           "PostToolUseFailure",
+           "PostToolBatch",
+           "Notification",
+           "UserPromptSubmit",
+           "UserPromptExpansion",
+           "SessionStart",
+           "SessionEnd",
+           "Stop",
+           "StopFailure",
+           "SubagentStart",
+           "SubagentStop",
+           "PreCompact",
+           "PostCompact",
+           "PreModelSwitch",
+           "PostModelSwitch",
+           "PermissionRequest",
+           "PermissionDenied",
+           "Setup",
+           "TeammateIdle",
+           "TaskCreated",
+           "TaskCompleted",
+           "Elicitation",
+           "ElicitationResult",
+           "ConfigChange",
+           "WorktreeCreate",
+           "WorktreeRemove",
+           "InstructionsLoaded",
+           "CwdChanged",
+           "FileChanged",
+           "DirectoryAdded",
+           "MessageDisplay"
+          ],
+          "type": "string"
+         },
+         "max": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+         },
+         "min": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+         },
+         "tool": {
+          "minLength": 1,
+          "type": "string"
+         },
+         "via": {
+          "enum": [
+           "exit2",
+           "json",
+           "any"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "event"
+        ],
+        "type": "object"
+       }
+      ]
+     },
+     "hook_event_fired": {
+      "enum": [
+       "PreToolUse",
+       "PostToolUse",
+       "PostToolUseFailure",
+       "PostToolBatch",
+       "Notification",
+       "UserPromptSubmit",
+       "UserPromptExpansion",
+       "SessionStart",
+       "SessionEnd",
+       "Stop",
+       "StopFailure",
+       "SubagentStart",
+       "SubagentStop",
+       "PreCompact",
+       "PostCompact",
+       "PreModelSwitch",
+       "PostModelSwitch",
+       "PermissionRequest",
+       "PermissionDenied",
+       "Setup",
+       "TeammateIdle",
+       "TaskCreated",
+       "TaskCompleted",
+       "Elicitation",
+       "ElicitationResult",
+       "ConfigChange",
+       "WorktreeCreate",
+       "WorktreeRemove",
+       "InstructionsLoaded",
+       "CwdChanged",
+       "FileChanged",
+       "DirectoryAdded",
+       "MessageDisplay"
+      ],
+      "type": "string"
+     },
+     "hook_output_contains": {
+      "additionalProperties": false,
+      "properties": {
+       "event": {
+        "enum": [
+         "PreToolUse",
+         "PostToolUse",
+         "PostToolUseFailure",
+         "PostToolBatch",
+         "Notification",
+         "UserPromptSubmit",
+         "UserPromptExpansion",
+         "SessionStart",
+         "SessionEnd",
+         "Stop",
+         "StopFailure",
+         "SubagentStart",
+         "SubagentStop",
+         "PreCompact",
+         "PostCompact",
+         "PreModelSwitch",
+         "PostModelSwitch",
+         "PermissionRequest",
+         "PermissionDenied",
+         "Setup",
+         "TeammateIdle",
+         "TaskCreated",
+         "TaskCompleted",
+         "Elicitation",
+         "ElicitationResult",
+         "ConfigChange",
+         "WorktreeCreate",
+         "WorktreeRemove",
+         "InstructionsLoaded",
+         "CwdChanged",
+         "FileChanged",
+         "DirectoryAdded",
+         "MessageDisplay"
+        ],
+        "type": "string"
+       },
+       "matches": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "stream": {
+        "enum": [
+         "stdout",
+         "stderr",
+         "any"
+        ],
+        "type": "string"
+       },
+       "text": {
+        "minLength": 1,
+        "type": "string"
+       }
+      },
+      "required": [
+       "event"
+      ],
+      "type": "object"
+     },
+     "hook_output_not_contains": {
+      "additionalProperties": false,
+      "properties": {
+       "event": {
+        "enum": [
+         "PreToolUse",
+         "PostToolUse",
+         "PostToolUseFailure",
+         "PostToolBatch",
+         "Notification",
+         "UserPromptSubmit",
+         "UserPromptExpansion",
+         "SessionStart",
+         "SessionEnd",
+         "Stop",
+         "StopFailure",
+         "SubagentStart",
+         "SubagentStop",
+         "PreCompact",
+         "PostCompact",
+         "PreModelSwitch",
+         "PostModelSwitch",
+         "PermissionRequest",
+         "PermissionDenied",
+         "Setup",
+         "TeammateIdle",
+         "TaskCreated",
+         "TaskCompleted",
+         "Elicitation",
+         "ElicitationResult",
+         "ConfigChange",
+         "WorktreeCreate",
+         "WorktreeRemove",
+         "InstructionsLoaded",
+         "CwdChanged",
+         "FileChanged",
+         "DirectoryAdded",
+         "MessageDisplay"
+        ],
+        "type": "string"
+       },
+       "matches": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "stream": {
+        "enum": [
+         "stdout",
+         "stderr",
+         "any"
+        ],
+        "type": "string"
+       },
+       "text": {
+        "minLength": 1,
+        "type": "string"
+       }
+      },
+      "required": [
+       "event"
+      ],
+      "type": "object"
+     },
+     "input_unmodified": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       }
+      ]
+     },
+     "max_cost_usd": {
+      "exclusiveMinimum": 0,
+      "type": "number"
+     },
+     "max_peak_rss_bytes": {
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991,
+      "type": "integer"
+     },
+     "max_redundant_tool_calls": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "max_tokens": {
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991,
+      "type": "integer"
+     },
+     "max_tool_errors": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "max_turns": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "no_delete_in_mounts": {
+      "const": true,
+      "type": "boolean"
+     },
+     "no_delete_in_outputs": {
+      "const": true,
+      "type": "boolean"
+     },
+     "no_hook_blocked": {
+      "const": true,
+      "type": "boolean"
+     },
+     "no_hook_event_blocked": {
+      "anyOf": [
+       {
+        "const": true,
+        "type": "boolean"
+       },
+       {
+        "additionalProperties": false,
+        "properties": {
+         "event": {
+          "enum": [
+           "PreToolUse",
+           "PostToolUse",
+           "PostToolUseFailure",
+           "PostToolBatch",
+           "Notification",
+           "UserPromptSubmit",
+           "UserPromptExpansion",
+           "SessionStart",
+           "SessionEnd",
+           "Stop",
+           "StopFailure",
+           "SubagentStart",
+           "SubagentStop",
+           "PreCompact",
+           "PostCompact",
+           "PreModelSwitch",
+           "PostModelSwitch",
+           "PermissionRequest",
+           "PermissionDenied",
+           "Setup",
+           "TeammateIdle",
+           "TaskCreated",
+           "TaskCompleted",
+           "Elicitation",
+           "ElicitationResult",
+           "ConfigChange",
+           "WorktreeCreate",
+           "WorktreeRemove",
+           "InstructionsLoaded",
+           "CwdChanged",
+           "FileChanged",
+           "DirectoryAdded",
+           "MessageDisplay"
+          ],
+          "type": "string"
+         },
+         "tool": {
+          "minLength": 1,
+          "type": "string"
+         }
+        },
+        "required": [
+         "event"
+        ],
+        "type": "object"
+       }
+      ]
+     },
+     "no_lost_write_back": {
+      "const": true,
+      "type": "boolean"
+     },
+     "no_mcp_error": {
+      "const": true,
+      "type": "boolean"
+     },
+     "no_observed_reference_access": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "no_path_denied": {
+      "const": true,
+      "type": "boolean"
+     },
+     "no_scratchpad_leak": {
+      "const": true,
+      "type": "boolean"
+     },
+     "no_skill_triggered": {
+      "type": "string"
+     },
+     "no_unexpected_files": {
+      "items": {
+       "minLength": 1,
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "no_vm_path_file_op": {
+      "const": true,
+      "type": "boolean"
+     },
+     "path_denied": {
+      "additionalProperties": false,
+      "properties": {
+       "agent_scope": {
+        "enum": [
+         "main",
+         "subagent",
+         "any"
+        ],
+        "type": "string"
+       },
+       "path_matches": {
+        "type": "string"
+       },
+       "source": {
+        "enum": [
+         "pretooluse",
+         "can_use_tool",
+         "permission_denied"
+        ],
+        "type": "string"
+       },
+       "tool": {
+        "minLength": 1,
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "present_files_called": {
+      "const": true,
+      "type": "boolean"
+     },
+     "question_asked": {
+      "type": "string"
+     },
+     "question_context": {
+      "additionalProperties": false,
+      "properties": {
+       "matches": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "when_question": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "matches"
+      ],
+      "type": "object"
+     },
+     "question_option_count": {
+      "additionalProperties": false,
+      "properties": {
+       "case_sensitive": {
+        "const": true,
+        "type": "boolean"
+       },
+       "exactly": {
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "matches": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "max": {
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "min": {
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "when_question": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "matches"
+      ],
+      "type": "object"
+     },
+     "question_options": {
+      "additionalProperties": false,
+      "properties": {
+       "contains": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "equals": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "order": {
+        "enum": [
+         "exact",
+         "any"
+        ],
+        "type": "string"
+       },
+       "when_question": {
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "questions_count_max": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "reference_read": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "replay_protocol_fidelity": {
+      "type": "boolean"
+     },
+     "result": {
+      "enum": [
+       "success",
+       "error"
+      ],
+      "type": "string"
+     },
+     "search_corpus_max_miss_rate": {
+      "maximum": 1,
+      "minimum": 0,
+      "type": "number"
+     },
+     "search_corpus_nearby_citations": {
+      "additionalProperties": false,
+      "properties": {
+       "artifact": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "max": {
+        "maximum": 9007199254740991,
+        "minimum": 0,
+        "type": "integer"
+       }
+      },
+      "required": [
+       "artifact"
+      ],
+      "type": "object"
+     },
+     "self_heal_ran": {
+      "type": "boolean"
+     },
+     "semantic_matches": {
+      "additionalProperties": false,
+      "properties": {
+       "evidence_files": {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       },
+       "include_fork_results": {
+        "type": "boolean"
+       },
+       "include_subagent_text": {
+        "type": "boolean"
+       },
+       "judge_model": {
+        "type": "string"
+       },
+       "min_pass": {
+        "anyOf": [
+         {
+          "const": "all",
+          "type": "string"
+         },
+         {
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991,
+          "type": "integer"
+         }
+        ]
+       },
+       "rubric": {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       }
+      },
+      "required": [
+       "rubric"
+      ],
+      "type": "object"
+     },
+     "semantic_pairwise": {
+      "additionalProperties": false,
+      "properties": {
+       "evidence_files": {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       },
+       "include_fork_results": {
+        "type": "boolean"
+       },
+       "include_subagent_text": {
+        "type": "boolean"
+       },
+       "judge_model": {
+        "type": "string"
+       },
+       "order": {
+        "enum": [
+         "random",
+         "both"
+        ],
+        "type": "string"
+       },
+       "pass_if": {
+        "enum": [
+         "win",
+         "not_worse",
+         "any"
+        ],
+        "type": "string"
+       },
+       "refs": {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       },
+       "rubric": {
+        "items": {
+         "minLength": 1,
+         "type": "string"
+        },
+        "minItems": 1,
+        "type": "array"
+       }
+      },
+      "type": "object"
+     },
+     "skill_available": {
+      "type": "string"
+     },
+     "skill_tool_used": {
+      "additionalProperties": false,
+      "properties": {
+       "skill": {
+        "type": "string"
+       },
+       "tool": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "skill",
+       "tool"
+      ],
+      "type": "object"
+     },
+     "skill_triggered": {
+      "type": "string"
+     },
+     "subagent_declared_but_unused": {
+      "type": "string"
+     },
+     "subagent_dispatch_healthy": {
+      "additionalProperties": false,
+      "properties": {
+       "delivered": {
+        "type": "boolean"
+       },
+       "no_vm_paths": {
+        "type": "boolean"
+       },
+       "path": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "path_suffix": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "type": {
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "subagent_dispatched": {
+      "type": "string"
+     },
+     "subagent_file_write": {
+      "additionalProperties": false,
+      "properties": {
+       "path": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "path_suffix": {
+        "minLength": 1,
+        "type": "string"
+       },
+       "tool": {
+        "minLength": 1,
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "subagent_output_contains": {
+      "additionalProperties": false,
+      "properties": {
+       "contains": {
+        "type": "string"
+       },
+       "match": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "contains"
+      ],
+      "type": "object"
+     },
+     "subagent_tool_absent": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "subagent_tool_used": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "task_count_min": {
+      "exclusiveMinimum": 0,
+      "maximum": 9007199254740991,
+      "type": "integer"
+     },
+     "task_status": {
+      "additionalProperties": false,
+      "properties": {
+       "match": {
+        "type": "string"
+       },
+       "status": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "match",
+       "status"
+      ],
+      "type": "object"
+     },
+     "tool_available": {
+      "type": "string"
+     },
+     "tool_called": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "additionalProperties": false,
+        "properties": {
+         "count": {
+          "additionalProperties": false,
+          "properties": {
+           "max": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+           },
+           "min": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+           }
+          },
+          "type": "object"
+         },
+         "input": {
+          "additionalProperties": {
+           "minLength": 1,
+           "type": "string"
+          },
+          "propertyNames": {
+           "type": "string"
+          },
+          "type": "object"
+         },
+         "input_any": {
+          "minLength": 1,
+          "type": "string"
+         },
+         "result": {
+          "additionalProperties": false,
+          "properties": {
+           "is_error": {
+            "type": "boolean"
+           },
+           "matches": {
+            "minLength": 1,
+            "type": "string"
+           },
+           "not_matches": {
+            "minLength": 1,
+            "type": "string"
+           }
+          },
+          "type": "object"
+         },
+         "scope": {
+          "enum": [
+           "main",
+           "subagent",
+           "any"
+          ],
+          "type": "string"
+         },
+         "subagent_type": {
+          "minLength": 1,
+          "type": "string"
+         },
+         "tool": {
+          "anyOf": [
+           {
+            "minLength": 1,
+            "type": "string"
+           },
+           {
+            "items": {
+             "minLength": 1,
+             "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+           }
+          ]
+         }
+        },
+        "required": [
+         "tool"
+        ],
+        "type": "object"
+       }
+      ]
+     },
+     "tool_calls_max": {
+      "maximum": 9007199254740991,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "tool_no_error": {
+      "type": "string"
+     },
+     "tool_no_error_if_called": {
+      "type": "string"
+     },
+     "tool_not_called": {
+      "anyOf": [
+       {
+        "minLength": 1,
+        "type": "string"
+       },
+       {
+        "additionalProperties": false,
+        "properties": {
+         "input": {
+          "additionalProperties": {
+           "minLength": 1,
+           "type": "string"
+          },
+          "propertyNames": {
+           "type": "string"
+          },
+          "type": "object"
+         },
+         "input_any": {
+          "minLength": 1,
+          "type": "string"
+         },
+         "result": {
+          "additionalProperties": false,
+          "properties": {
+           "is_error": {
+            "type": "boolean"
+           },
+           "matches": {
+            "minLength": 1,
+            "type": "string"
+           },
+           "not_matches": {
+            "minLength": 1,
+            "type": "string"
+           }
+          },
+          "type": "object"
+         },
+         "scope": {
+          "enum": [
+           "main",
+           "subagent",
+           "any"
+          ],
+          "type": "string"
+         },
+         "subagent_type": {
+          "minLength": 1,
+          "type": "string"
+         },
+         "tool": {
+          "anyOf": [
+           {
+            "minLength": 1,
+            "type": "string"
+           },
+           {
+            "items": {
+             "minLength": 1,
+             "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+           }
+          ]
+         }
+        },
+        "required": [
+         "tool"
+        ],
+        "type": "object"
+       }
+      ]
+     },
+     "tool_result_contains": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "tool_result_matches": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "tool_result_not_contains": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "tool_result_not_matches": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "transcript_contains": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "transcript_matches": {
+      "type": "string"
+     },
+     "transcript_no_host_path": {
+      "const": true,
+      "type": "boolean"
+     },
+     "transcript_not_contains": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "transcript_not_matches": {
+      "type": "string"
+     },
+     "user_visible_artifact": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "additionalProperties": false,
+        "properties": {
+         "authored": {
+          "type": "boolean"
+         },
+         "path": {
+          "minLength": 1,
+          "type": "string"
+         }
+        },
+        "required": [
+         "path"
+        ],
+        "type": "object"
+       }
+      ]
+     },
+     "vm_path_denied": {
+      "const": true,
+      "type": "boolean"
+     }
+    },
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "baseline": {
+   "default": "latest",
+   "type": "string"
+  },
+  "device_bridge": {
+   "const": true,
+   "type": "boolean"
+  },
+  "execution": {
+   "default": "local",
+   "enum": [
+    "local",
+    "cloud-describe"
+   ],
+   "type": "string"
+  },
+  "expect_denied": {
+   "default": [],
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "fidelity": {
+   "enum": [
+    "protocol",
+    "container",
+    "microvm",
+    "hostloop",
+    "cowork"
+   ],
+   "type": "string"
+  },
+  "lane": {
+   "default": "local",
+   "enum": [
+    "local",
+    "remote"
+   ],
+   "type": "string"
+  },
+  "metrics": {
+   "items": {
+    "additionalProperties": false,
+    "allOf": [
+     {
+      "oneOf": [
+       {
+        "not": {
+         "anyOf": [
+          {
+           "properties": {
+            "command": {}
+           },
+           "required": [
+            "command"
+           ],
+           "type": "object"
+          },
+          {
+           "properties": {
+            "deps": {}
+           },
+           "required": [
+            "deps"
+           ],
+           "type": "object"
+          },
+          {
+           "properties": {
+            "timeout_ms": {}
+           },
+           "required": [
+            "timeout_ms"
+           ],
+           "type": "object"
+          }
+         ]
+        },
+        "properties": {
+         "artifact": {},
+         "path": {}
+        },
+        "required": [
+         "artifact",
+         "path"
+        ],
+        "type": "object"
+       },
+       {
+        "not": {
+         "anyOf": [
+          {
+           "properties": {
+            "artifact": {}
+           },
+           "required": [
+            "artifact"
+           ],
+           "type": "object"
+          },
+          {
+           "properties": {
+            "path": {}
+           },
+           "required": [
+            "path"
+           ],
+           "type": "object"
+          }
+         ]
+        },
+        "properties": {
+         "command": {}
+        },
+        "required": [
+         "command"
+        ],
+        "type": "object"
+       }
+      ]
+     }
+    ],
+    "oneOf": [
+     {
+      "not": {
+       "properties": {
+        "unbounded": {}
+       },
+       "required": [
+        "unbounded"
+       ],
+       "type": "object"
+      },
+      "properties": {
+       "scale": {}
+      },
+      "required": [
+       "scale"
+      ],
+      "type": "object"
+     },
+     {
+      "not": {
+       "properties": {
+        "scale": {}
+       },
+       "required": [
+        "scale"
+       ],
+       "type": "object"
+      },
+      "properties": {
+       "unbounded": {}
+      },
+      "required": [
+       "unbounded"
+      ],
+      "type": "object"
+     }
+    ],
+    "properties": {
+     "artifact": {
+      "not": {
+       "anyOf": [
+        {
+         "pattern": "^\\s*$"
+        },
+        {
+         "pattern": "\\\\"
+        },
+        {
+         "pattern": "^/"
+        },
+        {
+         "pattern": "^[A-Za-z]:(/|$)"
+        },
+        {
+         "pattern": "(^|/)\\.\\.(/|$)"
+        },
+        {
+         "pattern": "\\u0000"
+        }
+       ]
+      },
+      "type": "string"
+     },
+     "better": {
+      "enum": [
+       "higher",
+       "lower"
+      ],
+      "type": "string"
+     },
+     "command": {
+      "items": {
+       "maxLength": 4096,
+       "minLength": 1,
+       "type": "string"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "type": "array"
+     },
+     "deps": {
+      "items": {
+       "minLength": 1,
+       "type": "string"
+      },
+      "maxItems": 32,
+      "type": "array"
+     },
+     "id": {
+      "maxLength": 129,
+      "not": {
+       "anyOf": [
+        {
+         "pattern": "^\\.+$"
+        },
+        {
+         "pattern": "^([pP][aA][sS][sS]|[cC][lL][aA][iI][mM][sS]|[wW][iI][nN]|[bB][oO][tT][hH]_[bB][aA][dD])$"
+        },
+        {
+         "pattern": "^[aA]\\d+(_|$)"
+        },
+        {
+         "pattern": "_[pP][rR][eE][sS][eE][nN][tT]$"
+        },
+        {
+         "pattern": "(^|_)([wW][iI][nN]|[bB][oO][tT][hH]_[bB][aA][dD])(_|$)"
+        }
+       ]
+      },
+      "pattern": "^[\\w.-]+$",
+      "type": "string"
+     },
+     "min": {
+      "type": "number"
+     },
+     "path": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "scale": {
+      "exclusiveMinimum": 0,
+      "type": "number"
+     },
+     "timeout_ms": {
+      "maximum": 300000,
+      "minimum": 1000,
+      "type": "integer"
+     },
+     "unbounded": {
+      "const": true,
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "better"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "name": {
+   "default": "",
+   "type": "string"
+  },
+  "on_unanswered": {
+   "enum": [
+    "fail",
+    "prompt",
+    "llm",
+    "first"
+   ],
+   "type": "string"
+  },
+  "prompt": {
+   "type": "string"
+  },
+  "requires_capabilities": {
+   "default": [],
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "session": {
+   "default": "(inline)",
+   "type": "string"
+  },
+  "skills": {
+   "default": [],
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "timeout_ms": {
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991,
+   "type": "integer"
+  },
+  "workspace_fixture": {
+   "minLength": 1,
+   "type": "string"
+  }
+ },
+ "required": [
+  "fidelity",
+  "prompt"
+ ],
+ "type": "object"
+}

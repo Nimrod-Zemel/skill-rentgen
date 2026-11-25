@@ -1,0 +1,17 @@
+{
+  "description": "At the start of a session, compares the skills you approved with their recorded file hashes and prints one short line if any of them changed. Runs a small script that can only read: it cannot scan, install, block or reach the network. Prints nothing when nothing changed.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/skills/skill-rentgen/scripts/session_check.py\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

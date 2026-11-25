@@ -1,0 +1,44 @@
+name: calibration
+
+# Run by hand. Fetches the known-good repositories at the commits pinned in
+# tests/corpus.lock.json, scans them, and starts their self-starting parts
+# in a real container. The results are kept as an artifact.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  corpus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the corpus at its pinned commits
+        run: |
+          mkdir -p "$RUNNER_TEMP/corpus"
+          python3 - "$RUNNER_TEMP/corpus" <<'PY'
+          import json, os, subprocess, sys
+          for item in json.load(open("tests/corpus.lock.json"))["repositories"]:
+              name = item["repository"].rstrip("/").split("github.com/")[1].replace("/", "_")
+              dest = os.path.join(sys.argv[1], name)
+              subprocess.check_call(["git", "init", "-q", dest])
+              subprocess.check_call(["git", "-C", dest, "fetch", "-q", "--depth", "1",
+                                     item["repository"], item["commit"]])
+              subprocess.check_call(["git", "-C", dest, "checkout", "-q", "FETCH_HEAD"])
+          PY
+      - name: Scan calibration
+        run: python3 tests/calibrate.py "$RUNNER_TEMP/corpus" --json "$RUNNER_TEMP/scan-calibration.json"
+      - name: Trial calibration, in a real container
+        run: |
+          docker pull python:3.12-slim
+          python3 tests/calibrate_trial.py "$RUNNER_TEMP/corpus" --json "$RUNNER_TEMP/trial-calibration.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: calibration
+          path: ${{ runner.temp }}/*-calibration.json

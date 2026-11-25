@@ -1,0 +1,85 @@
+{
+ "rules_version": "2026.11.1",
+ "text": {
+  "conceal": [
+   "\\b(?:do\\s+not|don'?t|never)\\s+(?:tell|inform|notify|alert|warn)\\s+(?:the\\s+)?(?:user|human|operator)\\s*(?:about\\b|of\\s+(?:this|these|that|the)\\b|that\\s+(?:you|we|i|this|the|it|these|any)\\b|[.!;]|$)",
+   "\\bwithout\\s+(?:telling|informing|notifying|alerting)\\s+(?:the\\s+)?(?:user|human|operator)\\b",
+   "\\b(?:hide|conceal)\\s+(?:this|these|that|the|your|all|any)\\s+(?:[\\w-]+\\s+){0,3}from\\s+(?:the\\s+)?(?:user|human|operator)\\b",
+   "\\b(?:secretly|covertly|stealthily|quietly|silently)\\s+(?:send|upload|post|transmit|exfiltrate|forward|email|leak)\\b",
+   "\\b(?:do\\s+not|don'?t|never)\\s+(?:mention|reveal|disclose|show)\\s+(?:this|these|it|that)\\s+(?:instruction|step|action|command|message|section)?\\s*(?:to\\s+)?(?:the\\s+)?(?:user|human)\\b",
+   "\u05d0\u05dc\\s+\u05ea(?:\u05e1\u05e4\u05e8|\u05d2\u05d9\u05d3|\u05d9\u05d9\u05d3\u05e2|\u05d2\u05dc\u05d4)\\s+\u05dc\u05de\u05e9\u05ea\u05de\u05e9",
+   "\u05d1\u05dc\u05d9\\s+\u05dc(?:\u05d9\u05d9\u05d3\u05e2|\u05e1\u05e4\u05e8|\u05d5\u05de\u05e8)\\s+(?:\u05d0\u05ea\\s+\u05d4|\u05dc)\u05de\u05e9\u05ea\u05de\u05e9",
+   "\u05d4\u05e1\u05ea\u05e8\\s+(?:\u05d6\u05d0\u05ea\\s+)?\u05de\u05d4\u05de\u05e9\u05ea\u05de\u05e9",
+   "\\b(?:bcc|forward|send|email|post|upload|transmit)\\b[^.\\n]{0,60}\\b(?:entire|full|whole|complete|all\\s+(?:of\\s+)?the|every)\\b[^.\\n]{0,60}\\b(?:conversation|chat|transcript|history|context|session|inbox|mailbox|files?|documents?|emails?|messages?|contacts?|credentials?|secrets?|keys?)\\b[^.\\n]{0,60}\\bto\\s+(?:[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+|https?://\\S+)",
+   "\\b(?:hide|conceal)\\s+(?:this|these)\\s+(?:action|step|command|operation|request|tool\\s+call|call|activity|behaviou?r|change|message|output|result)s?\\b(?!\\s+(?:if|when|behind|in\\s+a|inside|under))"
+  ],
+  "override": [
+   "\\bignore\\s+(?:all\\s+|any\\s+|the\\s+|your\\s+)?(?:previous|prior|earlier|above|preceding|system)\\s+(?:instructions?|prompts?|rules|messages|directions)\\b",
+   "\\bdisregard\\s+(?:all\\s+|any\\s+|your\\s+|the\\s+)?(?:previous|prior|above|system|safety)\\s+(?:instructions?|prompts?|rules|guidelines)\\b",
+   "\\bforget\\s+(?:all\\s+|everything\\s+)?(?:your\\s+)?(?:previous|prior)\\s+instructions\\b",
+   "\u05d4\u05ea\u05e2\u05dc\u05dd\\s+\u05de(?:\u05db\u05dc\\s+)?\u05d4\u05d4\u05d5\u05e8\u05d0\u05d5\u05ea\\s+\u05d4\u05e7\u05d5\u05d3\u05de\u05d5\u05ea"
+  ],
+  "bypass": [
+   "\\b(?:disable|bypass|turn\\s+off|circumvent|override)\\s+(?:the\\s+|all\\s+|any\\s+)?(?:permission|approval|confirmation|safety|sandbox|security)\\s*(?:prompts?|checks?|dialogs?|system|mode|requests?|settings?)?\\b"
+  ],
+  "no_ask": [
+   "\\b(?:without\\s+asking|do\\s+not\\s+ask|don'?t\\s+ask|never\\s+ask)(?:\\s+the\\s+user)?(?:\\s+for)?\\s+(?:confirmation|permission|approval)\\b",
+   "\\bauto-?approve\\s+(?:all|every|any)\\b",
+   "\u05d1\u05dc\u05d9\\s+\u05dc\u05d1\u05e7\u05e9\\s+\u05d0\u05d9\u05e9\u05d5\u05e8"
+  ],
+  "remote_load": [
+   "\\b(?:fetch|download|curl|wget|read|load|retrieve|pull|open|visit)\\b[^.\\n]{0,80}(https?://[^\\s)>\\\"'`]+)[^.\\n]{0,80}\\b(?:and|then)\\s+(?:follow|execute|run|apply|obey|do\\s+(?:what|as))\\b",
+   "\\b(?:follow|execute|obey|apply)\\s+(?:the\\s+|any\\s+|all\\s+)?(?:instructions?|steps|commands|directives|rules|prompt)\\s+(?:at|from|in|found\\s+at|located\\s+at|on)\\s+(?:the\\s+)?(?:url\\s+|page\\s+)?(https?://[^\\s)>\\\"'`]+)",
+   "\\bload\\s+(?:the\\s+|your\\s+)?(?:latest\\s+|current\\s+)?(?:instructions?|prompt|rules|system\\s+prompt)\\s+from\\s+(https?://[^\\s)>\\\"'`]+)"
+  ],
+  "mention_guard": "inject|attack|malicious|adversar|jailbreak|detect|example|e\\.g\\.|such\\s+as|pattern|phrases?\\b|refuse|untrusted|suspicious|treat\\b|flag\\b|report\\b|red\\s+flag|warning\\s+sign|should\\s+never|payload|threat|scan|block(?:ed|s)?\\b|reject|look\\s+for|check\\s+for|watch\\s+(?:out\\s+)?for|hunt(?:s|ing)?\\s+for|anti-?patterns?|bad\\s+(?:practices?|patterns?|examples?)|pitfalls?|mistakes?|code\\s+smells?|violations?|hide\\s+errors|silent\\s+failures?|common\\s+(?:issues|problems|errors)|what\\s+not\\s+to\\s+do|do\\s+not\\s+do\\s+this",
+  "negation": "(?:never|do\\s+not|don'?t|must\\s+not|should\\s+not|shouldn'?t|cannot|can'?t|won'?t|not|no|avoid|without|refuse|instead\\s+of)",
+  "secrets": [
+   [
+    "aws-access-key",
+    "\\b(?:AKIA|ASIA)[0-9A-Z]{16}\\b"
+   ],
+   [
+    "github-token",
+    "\\bgh[pousr]_[A-Za-z0-9]{36,}\\b"
+   ],
+   [
+    "github-pat",
+    "\\bgithub_pat_[A-Za-z0-9_]{50,}\\b"
+   ],
+   [
+    "anthropic-key",
+    "\\bsk-ant-[A-Za-z0-9_-]{24,}\\b"
+   ],
+   [
+    "openai-key",
+    "\\bsk-(?:proj-)?[A-Za-z0-9_-]{40,}\\b"
+   ],
+   [
+    "slack-token",
+    "\\bxox[baprs]-[A-Za-z0-9-]{24,}\\b"
+   ],
+   [
+    "google-api-key",
+    "\\bAIza[0-9A-Za-z_-]{35}\\b"
+   ],
+   [
+    "stripe-live-key",
+    "\\b[sr]k_live_[0-9a-zA-Z]{24,}\\b"
+   ],
+   [
+    "npm-token",
+    "\\bnpm_[A-Za-z0-9]{36}\\b"
+   ],
+   [
+    "private-key",
+    "-----BEGIN (?:RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY(?: BLOCK)?-----\\s*\\n[A-Za-z0-9+/=]{40,}"
+   ]
+  ],
+  "homoglyph": "\u0430\u0441\u0435\u043e\u0440\u0445\u0443\u0456\u0458\u0455\u04bb\u0501\u051b\u051d\u0410\u0412\u0421\u0415\u041d\u0406\u0408\u041a\u041c\u041e\u0420\u0405\u0422\u0425\u03bf\u0391\u0392\u0395\u0396\u0397\u0399\u039a\u039c\u039d\u039f\u03a1\u03a4\u03a5\u03a7",
+  "indirect": [
+   "\\b(?:follow|obey|execute|carry\\s+out|act\\s+on|apply)\\s+(?:the\\s+|any\\s+|all\\s+|whatever\\s+)?(?:instructions?|commands?|directives?|steps)\\s+(?:(?:that\\s+)?(?:you\\s+)?(?:find|found|appear|given|contained|written)\\s+)?(?:from|in|on|at|inside)\\s+(?:the\\s+|that\\s+|any\\s+|a\\s+|each\\s+|every\\s+)?(?:fetched\\s+|retrieved\\s+|downloaded\\s+|external\\s+|remote\\s+)?(?:web\\s?pages?|websites?|pages?|urls?|links?|sites?|emails?|issues?|comments?|search\\s+results?|tool\\s+(?:outputs?|results?)|api\\s+responses?|responses?)\\b",
+   "\\btreat\\s+(?:the\\s+)?(?:fetched|retrieved|downloaded|external|remote|returned)\\s+(?:content|text|page|data|output)\\s+as\\s+(?:instructions?|commands?|trusted)\\b"
+  ]
+ }
+}

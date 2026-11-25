@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SkillRentgen trial record",
+  "description": "What one trial run started and what it saw. Written as <name>.trial.json.",
+  "type": "object",
+  "required": ["schema_version", "name", "status", "reason", "engine", "image", "commands",
+               "results", "findings", "verdict", "exit_code"],
+  "properties": {
+    "schema_version": {"type": "string", "enum": ["1.0"]},
+    "name": {"type": "string"},
+    "status": {"type": "string", "enum": ["ran", "not_run"]},
+    "reason": {"type": "string", "enum": ["", "no_engine", "nothing_to_run", "image_missing",
+                                          "engine_failed", "no_result", "too_big", "rejected"]},
+    "detail": {"type": "string"},
+    "engine": {"type": "string", "enum": ["", "docker", "podman"]},
+    "image": {"type": "string"},
+    "timeout": {"type": "integer"},
+    "verdict": {"type": "string", "enum": ["", "quiet", "notes", "caution", "blocked"]},
+    "exit_code": {"type": "integer", "enum": [0, 1, 2, 10]},
+    "decoys": {"type": "integer"},
+    "atime": {"type": "boolean"},
+    "tools": {"type": "object", "additionalProperties": {"type": "boolean"}},
+    "notes": {"type": "object"},
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "shell"],
+        "properties": {
+          "id": {"type": "string"},
+          "kind": {"type": "string", "enum": ["hook", "mcp", "lsp", "monitor", "package", "script", "run"]},
+          "event": {"type": "string"},
+          "file": {"type": "string"},
+          "shell": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "status"],
+        "properties": {
+          "id": {"type": "string"},
+          "status": {"type": "string", "enum": ["finished", "timeout", "could-not-start", "no-time-left"]},
+          "exit": {"type": ["integer", "null"]},
+          "seconds": {"type": ["number", "null"]}
+        },
+        "additionalProperties": false
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "severity", "red_line", "snippet"],
+        "properties": {
+          "rule_id": {"type": "string", "pattern": "^SR-TR-[0-9]{3}$"},
+          "severity": {"type": "string", "enum": ["info", "low", "medium", "high", "red"]},
+          "red_line": {"type": "boolean"},
+          "snippet": {"type": "string"},
+          "during": {"type": "string"},
+          "host": {"type": "string"},
+          "sub": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

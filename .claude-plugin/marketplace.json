@@ -1,0 +1,17 @@
+{
+  "name": "skill-rentgen",
+  "owner": {
+    "name": "Nimrod Zemel",
+    "url": "https://github.com/Nimrod-Zemel"
+  },
+  "metadata": {
+    "description": "SkillRentgen: check an agent skill before you install it, and know when it changes."
+  },
+  "plugins": [
+    {
+      "name": "skill-rentgen",
+      "source": "./skill-rentgen",
+      "description": "Reads a skill or plugin without running it and tells you, in Hebrew or English, what it does, whether that matches what it promises, and what would run on your machine without you asking."
+    }
+  ]
+}

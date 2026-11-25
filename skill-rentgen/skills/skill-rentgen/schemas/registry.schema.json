@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Nimrod-Zemel/skill-rentgen/blob/main/skill-rentgen/skills/skill-rentgen/schemas/registry.schema.json",
+  "title": "SkillRentgen registry",
+  "description": "The record of what the user approved. Written to ~/.skill-rentgen/registry.json.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "skills",
+    "settings"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "1.0",
+        "1.1"
+      ]
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "lang": {
+          "enum": [
+            "he",
+            "en"
+          ]
+        }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "description": "Keyed by a short hash: of the folder path for a plain skill, of the plugin name and marketplace for a plugin.",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "name",
+          "path",
+          "adopted_at",
+          "verdict",
+          "accepted",
+          "reasons",
+          "tool_version",
+          "rules_version",
+          "file_map_sha256",
+          "files",
+          "upstream"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "adopted_at": {
+            "type": "string"
+          },
+          "verdict": {
+            "enum": [
+              "approve",
+              "approve_with_notes",
+              "caution"
+            ],
+            "description": "A blocked or rejected skill is never recorded."
+          },
+          "accepted": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The warnings the user accepted when recording a caution skill."
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tool_version": {
+            "type": "string"
+          },
+          "rules_version": {
+            "type": "string"
+          },
+          "file_map_sha256": {
+            "type": "string"
+          },
+          "files": {
+            "type": "object",
+            "description": "Path to SHA-256, for every file."
+          },
+          "upstream": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "commit": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "how": {
+            "enum": [
+              "adopt",
+              "add",
+              "baseline"
+            ]
+          },
+          "hash_algo": {
+            "enum": [
+              "sha256"
+            ]
+          },
+          "stats": {
+            "type": "object",
+            "description": "Size and change time of each file, for a quick look that reads no file.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          "plugin": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "agent_settings": {
+      "type": "object",
+      "description": "A fingerprint of the keys in the agent's settings files that make something run by itself, taken by the baseline command.",
+      "properties": {
+        "recorded_at": {
+          "type": "string"
+        },
+        "files": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

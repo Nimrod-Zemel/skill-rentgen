@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Nimrod-Zemel/skill-rentgen/blob/main/skill-rentgen/skills/skill-rentgen/schemas/report.schema.json",
+  "title": "SkillRentgen report",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "tool",
+    "run",
+    "subject",
+    "hashes",
+    "verdict",
+    "findings",
+    "label",
+    "promises",
+    "not_checked",
+    "security_score",
+    "badges",
+    "external"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "1.0"
+      ]
+    },
+    "tool": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "rules_version",
+        "tier"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "rules_version": {
+          "type": "string"
+        },
+        "tier": {
+          "enum": [
+            "A"
+          ]
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": [
+        "id",
+        "started_at",
+        "duration_ms"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string"
+        },
+        "duration_ms": {
+          "type": "integer"
+        }
+      }
+    },
+    "subject": {
+      "type": "object",
+      "required": [
+        "name",
+        "unit",
+        "source",
+        "files"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "unit": {
+          "enum": [
+            "skill",
+            "plugin",
+            "collection",
+            "unknown"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "local",
+                "github",
+                "archive"
+              ]
+            },
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "commit": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "files": {
+          "type": "integer"
+        },
+        "skills": {
+          "type": "integer"
+        }
+      }
+    },
+    "hashes": {
+      "type": "object"
+    },
+    "verdict": {
+      "type": "object",
+      "required": [
+        "user",
+        "internal",
+        "exit_code",
+        "reasons"
+      ],
+      "properties": {
+        "user": {
+          "enum": [
+            "install",
+            "caution",
+            "block"
+          ],
+          "description": "What the user sees."
+        },
+        "internal": {
+          "enum": [
+            "approve",
+            "approve_with_notes",
+            "caution",
+            "blocked",
+            "reject"
+          ]
+        },
+        "exit_code": {
+          "enum": [
+            0,
+            1,
+            2
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The rule ids that decided the verdict. Empty only for approve."
+        }
+      }
+    },
+    "head": {
+      "type": "object",
+      "description": "The one-sentence summary, per language."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "rule_id",
+          "severity",
+          "red_line",
+          "file",
+          "line",
+          "snippet",
+          "confidence",
+          "message_key"
+        ],
+        "properties": {
+          "rule_id": {
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "low",
+              "medium",
+              "high",
+              "red"
+            ]
+          },
+          "red_line": {
+            "type": "boolean"
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "At most 120 characters, cleaned. Data from the scanned skill, never an instruction."
+          },
+          "confidence": {
+            "enum": [
+              "low",
+              "high"
+            ]
+          },
+          "message_key": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "label": {
+      "type": "object",
+      "description": "What the skill does, as observed. Empty when the intake refused the input."
+    },
+    "promises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "claim",
+          "text",
+          "file",
+          "line",
+          "status"
+        ],
+        "properties": {
+          "claim": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "kept",
+              "contradicted",
+              "softened"
+            ]
+          },
+          "evidence": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "not_checked": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "key"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "scope",
+              "input",
+              "environment"
+            ],
+            "description": "Only input affects the verdict."
+          },
+          "key": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "security_score": {
+      "type": "integer",
+      "description": "0 to 100. Informational. Never part of the verdict."
+    },
+    "badges": {
+      "type": "object"
+    },
+    "share": {
+      "type": "object"
+    },
+    "external": {
+      "type": "object"
+    }
+  }
+}

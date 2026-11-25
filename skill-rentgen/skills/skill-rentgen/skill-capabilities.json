@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "name": "skill-rentgen",
+  "version": "0.1.0",
+  "network": [
+    {
+      "host": "codeload.github.com",
+      "purpose": "download the repository you asked to scan",
+      "when": "only when you give a https://github.com address"
+    },
+    {
+      "host": "api.github.com",
+      "purpose": "ask for the newest commit id of a repository you recorded as a source",
+      "when": "only with adopt --source, add with a GitHub address, or check --upstream"
+    }
+  ],
+  "hooks": [
+    {
+      "event": "SessionStart",
+      "command": "session_check.py",
+      "purpose": "one line if a skill you approved has changed. A small script that reads the registry and hashes files; it cannot scan, install, block or use the network"
+    }
+  ],
+  "mcp_servers": [],
+  "monitors": [],
+  "bin": [],
+  "modules": [],
+  "writes_outside_skill_dir": [
+    "./skill-rentgen-report/ in the folder you run it from, or the folder given with --out",
+    "~/.skill-rentgen/registry.json and state.json: the record of what you approved, and when it was last checked",
+    "~/.claude/skills/<name>/ or ./.claude/skills/<name>/: only the add command, only a skill that passed the scan, and only the bytes that were scanned",
+    "./.claude/settings.local.json: only the block and unblock commands, only with --yes, and only the two deny rules for the skill you name",
+    "a temporary quarantine folder, removed when the scan ends",
+    "a temporary copy of the skill for a trial run, mounted read-only into the container and removed when the run ends"
+  ],
+  "env_reads": [
+    "PATH",
+    "TEMP",
+    "TMP",
+    "TMPDIR",
+    "SYSTEMROOT"
+  ],
+  "subprocess": [
+    "python3, for its own isolated stages",
+    "docker or podman, only for the trial command: one container with no network, removed at the end",
+    "cpd (claude-plugin-doctor), only with inventory --doctor and only if you installed it"
+  ],
+  "runtime_installs": [],
+  "reads_stdin": false,
+  "paid_services": [],
+  "telemetry": "none"
+}

@@ -1,0 +1,379 @@
+{
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "additionalProperties": false,
+ "properties": {
+  "account_name": {
+   "type": "string"
+  },
+  "agent_env": {
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "artifacts_root": {
+     "minLength": 1,
+     "pattern": "^(?!\\/)(?!.*\\\\)(?!(?:.*\\/)?\\.\\.(?:\\/|$))",
+     "type": "string"
+    },
+    "disable_experimental_betas": {
+     "type": "boolean"
+    },
+    "passthrough": {
+     "items": {
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "subagent_model": {
+     "type": "string"
+    },
+    "tool_search": {
+     "enum": [
+      "auto",
+      "off"
+     ],
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "agent_max_turns": {
+   "exclusiveMinimum": 0,
+   "maximum": 9007199254740991,
+   "type": "integer"
+  },
+  "answer_channel": {
+   "enum": [
+    "none"
+   ],
+   "type": "string"
+  },
+  "auto_mount_folders": {
+   "default": false,
+   "type": "boolean"
+  },
+  "debug": {
+   "additionalProperties": false,
+   "default": {},
+   "properties": {
+    "max_thinking_tokens": {
+     "exclusiveMinimum": 0,
+     "maximum": 9007199254740991,
+     "type": "integer"
+    },
+    "thinking_display": {
+     "enum": [
+      "summarized",
+      "omitted"
+     ],
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "effort": {
+   "enum": [
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+    "extra"
+   ],
+   "type": "string"
+  },
+  "egress": {
+   "additionalProperties": false,
+   "default": {
+    "extra_allow": [],
+    "unrestricted": false
+   },
+   "properties": {
+    "extra_allow": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "unrestricted": {
+     "default": false,
+     "type": "boolean"
+    }
+   },
+   "type": "object"
+  },
+  "extended_thinking": {
+   "default": true,
+   "type": "boolean"
+  },
+  "folders": {
+   "default": [],
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "from": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "mode": {
+      "default": "rw",
+      "enum": [
+       "r",
+       "rw",
+       "rwd"
+      ],
+      "type": "string"
+     }
+    },
+    "required": [
+     "from"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "mcp": {
+   "additionalProperties": false,
+   "default": {
+    "config": null,
+    "enabled": []
+   },
+   "properties": {
+    "config": {
+     "anyOf": [
+      {
+       "minLength": 1,
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null
+    },
+    "enabled": {
+     "default": [],
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "model": {
+   "type": "string"
+  },
+  "permission_mode": {
+   "enum": [
+    "default",
+    "acceptEdits",
+    "plan",
+    "bypassPermissions"
+   ],
+   "type": "string"
+  },
+  "permission_parity": {
+   "default": "cowork",
+   "enum": [
+    "cowork",
+    "strict"
+   ],
+   "type": "string"
+  },
+  "plugins": {
+   "additionalProperties": false,
+   "default": {
+    "config_dir": null,
+    "enabled": [],
+    "local_marketplaces": [],
+    "local_plugins": [],
+    "marketplaces": [],
+    "remote_plugins": []
+   },
+   "properties": {
+    "config_dir": {
+     "anyOf": [
+      {
+       "minLength": 1,
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null
+    },
+    "enabled": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "from_host": {
+     "anyOf": [
+      {
+       "const": true,
+       "type": "boolean"
+      },
+      {
+       "additionalProperties": false,
+       "properties": {
+        "plugins": {
+         "default": [],
+         "items": {
+          "minLength": 1,
+          "pattern": "^[^@\\s/]+@[^@\\s/]+$",
+          "type": "string"
+         },
+         "type": "array"
+        },
+        "skills": {
+         "default": [],
+         "items": {
+          "minLength": 1,
+          "type": "string"
+         },
+         "type": "array"
+        }
+       },
+       "type": "object"
+      }
+     ]
+    },
+    "local_marketplaces": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "local_plugins": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "marketplaces": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "remote_plugins": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "projects": {
+   "default": [],
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "from": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "uuid": {
+      "minLength": 1,
+      "type": "string"
+     }
+    },
+    "required": [
+     "uuid",
+     "from"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "skills": {
+   "additionalProperties": false,
+   "default": {
+    "local": []
+   },
+   "properties": {
+    "local": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "proactive_suggest_enabled": {
+     "type": "boolean"
+    },
+    "suggest_enabled": {
+     "type": "boolean"
+    }
+   },
+   "type": "object"
+  },
+  "staleness": {
+   "additionalProperties": false,
+   "default": {
+    "hash_ignore": []
+   },
+   "properties": {
+    "hash_ignore": {
+     "default": [],
+     "items": {
+      "minLength": 1,
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "trusted_folders": {
+   "default": [],
+   "items": {
+    "minLength": 1,
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "uploads": {
+   "default": [],
+   "items": {
+    "minLength": 1,
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "web_fetch": {
+   "additionalProperties": false,
+   "default": {
+    "approved_domains": []
+   },
+   "properties": {
+    "approved_domains": {
+     "default": [],
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  }
+ },
+ "type": "object"
+}

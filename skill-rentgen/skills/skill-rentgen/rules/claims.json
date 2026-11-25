@@ -1,0 +1,67 @@
+{
+ "rules_version": "2026.11.1",
+ "hedges": "(?:\\b(?:unless|except|optional(?:ly)?|by\\s+default|when\\s+you|if\\s+you|if\\s+(?:the|a|an)\\b|only\\s+when|apart\\s+from|other\\s+than|besides|mostly|can\\s+(?:also\\s+)?work|should|may|might|could|aims?\\s+to|tries\\s+to|not\\s+(?:fully|completely|entirely))\\b)|\\b(?:needs?|requires?|uses?)\\s+(?:the\\s+)?(?:network|internet)\\b|\\bnetwork\\s+access\\b|\\b(?:only|just)\\s+(?:to|for|when|if)\\b|\\boffline\\s+(?:for|when|if|once|after|mode)\\b|\\b(?:for|with)\\s+local\\b|\\bafter\\s+(?:the\\s+)?(?:first|initial)\\b",
+ "claims": [
+  {
+   "id": "no-network",
+   "red_line": true,
+   "contradicts": "network",
+   "re": [
+    "\\b(?:works?|runs?|operates?|functions?)\\s+(?:fully\\s+|completely\\s+|entirely\\s+|100%\\s+)?offline\\b",
+    "\\b(?:fully|completely|entirely|100%)\\s+offline\\b",
+    "\\bno\\s+(?:network|internet)\\s+(?:access|calls?|requests?|connection|usage)?\\s*(?:is\\s+)?(?:needed|required|used|made)?\\b(?=[.!,;\\n]|\\s+(?:is|are|at)\\b|$)",
+    "\\b(?:does\\s+not|doesn'?t|never|will\\s+not|won'?t)\\s+(?:access|use|touch|call|contact|connect\\s+to|make\\s+(?:any\\s+)?(?:network\\s+)?(?:calls?|requests?)\\s+to)\\s+(?:the\\s+)?(?:network|internet)\\b",
+    "\\bmakes?\\s+no\\s+(?:network|external|outbound|http)\\s+(?:calls?|requests?)\\b",
+    "\\bno\\s+external\\s+(?:calls?|requests?|api\\s+calls?)\\b",
+    "עובד\\s+(?:לגמרי\\s+)?בלי\\s+(?:רשת|אינטרנט)",
+    "לא\\s+פונה\\s+לרשת"
+   ]
+  },
+  {
+   "id": "does-not-send",
+   "red_line": true,
+   "contradicts": "send",
+   "re": [
+    "\\b(?:no|your)\\s+data\\s+(?:ever\\s+)?(?:never\\s+)?leaves?\\s+(?:your|the)\\s+(?:machine|computer|device|laptop|system)\\b",
+    "\\bnothing\\s+(?:ever\\s+)?leaves\\s+(?:your|the)\\s+(?:machine|computer|device)\\b",
+    "\\b(?:does\\s+not|doesn'?t|never|will\\s+not|won'?t)\\s+(?:send|upload|transmit|share|post)\\s+(?:any\\s+|your\\s+)?(?:data|files?|code|content|information|anything)\\b",
+    "\\bstays?\\s+(?:entirely\\s+|completely\\s+)?(?:on|local\\s+to)\\s+your\\s+(?:machine|computer|device)\\b",
+    "לא\\s+שולח\\s+(?:שום\\s+)?(?:מידע|נתונים|דבר)"
+   ]
+  },
+  {
+   "id": "no-collection",
+   "red_line": true,
+   "contradicts": "collect",
+   "re": [
+    "\\bno\\s+(?:data|information)\\s+is\\s+(?:ever\\s+)?collected\\b",
+    "\\b(?:does\\s+not|doesn'?t|never)\\s+collects?\\s+(?:any\\s+)?(?:data|information|telemetry|analytics|usage)\\b",
+    "\\bno\\s+(?:telemetry|analytics|tracking)\\b",
+    "\\bzero\\s+telemetry\\b"
+   ]
+  },
+  {
+   "id": "read-only",
+   "red_line": true,
+   "contradicts": "write",
+   "re": [
+    "\\b(?:this|the)\\s+(?:skill|tool|plugin|script|command|extension|server|agent|hook|scanner|cli)\\s+(?:is|are|runs?|operates?|stays?)\\s+(?:strictly\\s+|completely\\s+|fully\\s+|entirely\\s+)?read-?only\\b",
+    "\\b(?:strictly|completely|fully|entirely|100%)\\s+read-?only\\b",
+    "\\bread-?only\\s+(?:skill|tool|plugin|scanner)\\b",
+    "\\b(?:does\\s+not|doesn'?t|never|will\\s+not|won'?t)\\s+(?:modify|change|write|edit|delete|alter)\\s+(?:any\\s+(?:of\\s+your\\s+)?|your\\s+)files\\b",
+    "\\bmakes?\\s+no\\s+changes\\s+to\\s+your\\s+(?:files|code|system|project)\\b",
+    "לקריאה\\s+בלבד"
+   ]
+  },
+  {
+   "id": "no-dependencies",
+   "red_line": false,
+   "contradicts": "install",
+   "re": [
+    "\\b(?:no|zero)\\s+(?:external\\s+|third-party\\s+|runtime\\s+)?dependencies\\b",
+    "\\b(?:standard\\s+library|stdlib)\\s+only\\b",
+    "\\bnothing\\s+to\\s+install\\b"
+   ]
+  }
+ ]
+}

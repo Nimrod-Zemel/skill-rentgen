@@ -1,0 +1,41 @@
+{
+  "note": "The known-good repositories the rules were calibrated on. They are not copied into this repository.",
+  "repositories": [
+    {
+      "repository": "https://github.com/anthropics/claude-code",
+      "commit": "4cc5e8b63a5cc6fcddd1bf7fed04ebd712d0c91a"
+    },
+    {
+      "repository": "https://github.com/anthropics/claude-plugins-official",
+      "commit": "6985b2d88dc08b4a0d202f5f0301f02e360b9cb1"
+    },
+    {
+      "repository": "https://github.com/anthropics/skills",
+      "commit": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba"
+    },
+    {
+      "repository": "https://github.com/garrytan/gstack",
+      "commit": "64fe9e5231047aedbca2d2112535894e16118413"
+    },
+    {
+      "repository": "https://github.com/coreyhaines31/marketingskills",
+      "commit": "8fd2fcade2fd6629026e9dfe6d133b55b36968b9"
+    },
+    {
+      "repository": "https://github.com/mattpocock/skills",
+      "commit": "d65391149dbb5fe76478e76fa8d5122b2aa5a70e"
+    },
+    {
+      "repository": "https://github.com/DietrichGebert/ponytail",
+      "commit": "ebd8654c2c627f721eb8f9c0d1bd4090a29f9e10"
+    },
+    {
+      "repository": "https://github.com/obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7"
+    },
+    {
+      "repository": "https://github.com/vercel-labs/agent-skills",
+      "commit": "5a37a6329fbad3666c3207392a6a7c0110e92efb"
+    }
+  ]
+}

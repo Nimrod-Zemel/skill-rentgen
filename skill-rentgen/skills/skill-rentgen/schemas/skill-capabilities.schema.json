@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Nimrod-Zemel/skill-rentgen/blob/main/skill-rentgen/skills/skill-rentgen/schemas/skill-capabilities.schema.json",
+  "title": "skill-capabilities.json",
+  "description": "An optional file in which a skill declares what it does. A missing file is never held against a skill. A declaration is checked against the code; it does not excuse a red line.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "name"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "1.0"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "network": {
+      "type": "array",
+      "items": {
+        "type": [
+          "object",
+          "string"
+        ],
+        "required": [
+          "host"
+        ],
+        "properties": {
+          "host": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "when": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "hooks": {
+      "type": "array"
+    },
+    "mcp_servers": {
+      "type": "array"
+    },
+    "monitors": {
+      "type": "array"
+    },
+    "bin": {
+      "type": "array"
+    },
+    "modules": {
+      "type": "array"
+    },
+    "writes_outside_skill_dir": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "env_reads": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "subprocess": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "runtime_installs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reads_stdin": {
+      "type": "boolean"
+    },
+    "paid_services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "telemetry": {
+      "type": "string"
+    }
+  }
+}

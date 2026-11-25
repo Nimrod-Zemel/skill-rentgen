@@ -1,0 +1,53 @@
+{
+ "note": "Decoy files planted inside the sandbox before a trial run. Each holds a random marker made for that run, never a real secret. What a skill does with them is the evidence. The class of a kind decides the rule: secret (a read is a red line), sensitive (a read is a caution), config (a read is normal, a change is a red line).",
+ "kinds": {
+  "ssh-key": "secret", "cloud-credentials": "secret", "saved-logins": "secret", "package-token": "secret",
+  "git-logins": "secret", "github-login": "secret", "agent-login": "secret", "wallet": "secret",
+  "browser-logins": "secret", "browser-cookies": "secret", "keychain": "secret", "password-vault": "secret",
+  "project-keys": "sensitive", "shell-history": "sensitive", "conversation": "sensitive",
+  "agent-settings": "config", "startup": "config", "remote-access": "config"
+ },
+ "home": [
+  {"path": ".ssh/id_rsa", "kind": "ssh-key"},
+  {"path": ".ssh/id_ed25519", "kind": "ssh-key"},
+  {"path": ".ssh/authorized_keys", "kind": "remote-access"},
+  {"path": ".aws/credentials", "kind": "cloud-credentials"},
+  {"path": ".config/gcloud/application_default_credentials.json", "kind": "cloud-credentials"},
+  {"path": ".netrc", "kind": "saved-logins"},
+  {"path": ".npmrc", "kind": "package-token"},
+  {"path": ".pypirc", "kind": "package-token"},
+  {"path": ".git-credentials", "kind": "git-logins"},
+  {"path": ".config/gh/hosts.yml", "kind": "github-login"},
+  {"path": ".claude/.credentials.json", "kind": "agent-login"},
+  {"path": ".claude.json", "kind": "agent-settings"},
+  {"path": ".claude/settings.json", "kind": "agent-settings"},
+  {"path": ".claude/projects/trial/transcript.jsonl", "kind": "conversation"},
+  {"path": ".bash_history", "kind": "shell-history"},
+  {"path": ".zsh_history", "kind": "shell-history"},
+  {"path": ".bashrc", "kind": "startup"},
+  {"path": ".zshrc", "kind": "startup"},
+  {"path": ".profile", "kind": "startup"},
+  {"path": ".gitconfig", "kind": "startup"},
+  {"path": ".config/solana/id.json", "kind": "wallet"},
+  {"path": "Library/Application Support/Google/Chrome/Default/Login Data", "kind": "browser-logins"},
+  {"path": "Library/Application Support/Google/Chrome/Default/Cookies", "kind": "browser-cookies"},
+  {"path": "Library/Keychains/login.keychain-db", "kind": "keychain"},
+  {"path": "Documents/passwords.kdbx", "kind": "password-vault"}
+ ],
+ "work": [
+  {"path": ".env", "kind": "project-keys"},
+  {"path": ".claude/settings.local.json", "kind": "agent-settings"}
+ ],
+ "shims": {
+  "network": ["curl", "wget", "nc", "ncat", "netcat", "ssh", "scp", "sftp", "rsync", "telnet", "ftp", "git"],
+  "install": ["pip", "pip3", "pipx", "uv", "uvx", "npm", "npx", "pnpm", "yarn", "bun", "bunx", "deno", "brew", "apt", "apt-get", "gem", "cargo", "go"],
+  "system": ["sudo", "su", "osascript", "open", "xdg-open", "xattr", "docker", "podman", "chmod-quarantine"],
+  "persist": ["launchctl", "crontab", "systemctl", "defaults"],
+  "keychain": ["security", "secret-tool", "pass", "op"]
+ },
+ "persist_paths": ["Library/LaunchAgents/", "Library/LaunchDaemons/", ".config/autostart/", ".config/systemd/",
+                   ".config/fish/", ".bash_profile", ".zprofile", ".zshenv", ".bash_login", ".claude/skills/",
+                   ".claude/hooks/", ".claude/CLAUDE.md", ".claude/settings", ".claude/plugins/", ".claude/agents/",
+                   ".claude/commands/", ".agents/", ".cursor/", ".codex/", ".gemini/", ".ssh/"],
+ "quiet_paths": [".cache/", ".npm/", ".node_repl_history", ".python_history", ".local/state/", ".pki/"]
+}

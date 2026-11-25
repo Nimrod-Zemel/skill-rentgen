@@ -1,0 +1,337 @@
+{
+ "rules_version": "2026.11.1",
+ "rules": [
+  {
+   "id": "SR-FAIL-CLOSED",
+   "severity": "high",
+   "about": "a stage failed because of the scanned input"
+  },
+  {
+   "id": "SR-IN-004",
+   "severity": "high",
+   "about": "too large to scan fully"
+  },
+  {
+   "id": "SR-IN-005",
+   "severity": "low",
+   "about": "symbolic link inside the skill, not followed"
+  },
+  {
+   "id": "SR-IN-006",
+   "severity": "medium",
+   "about": "archive inside the skill, not scanned"
+  },
+  {
+   "id": "SR-IN-007",
+   "severity": "low",
+   "about": "documents that cannot be scanned for text"
+  },
+  {
+   "id": "SR-IN-008",
+   "severity": "medium",
+   "about": "unknown binary or special file"
+  },
+  {
+   "id": "SR-IN-009",
+   "severity": "low",
+   "about": "large text file, only the first megabyte was analysed"
+  },
+  {
+   "id": "SR-IN-010",
+   "severity": "high",
+   "about": "Python bytecode shipped next to its source"
+  },
+  {
+   "id": "SR-ST-001",
+   "severity": "low",
+   "about": "SKILL.md frontmatter is missing name or description"
+  },
+  {
+   "id": "SR-ST-002",
+   "severity": "info",
+   "about": "skill name is not valid or does not match its folder",
+   "calibration": "structure note, not a safety signal"
+  },
+  {
+   "id": "SR-ST-003",
+   "severity": "info",
+   "about": "description is too long or contains angle brackets",
+   "calibration": "structure note, not a safety signal"
+  },
+  {
+   "id": "SR-ST-004",
+   "severity": "info",
+   "about": "SKILL.md is longer than 500 lines",
+   "calibration": "structure note; the context cost badge carries it"
+  },
+  {
+   "id": "SR-ST-005",
+   "severity": "info",
+   "about": "SKILL.md links to a file that does not exist",
+   "calibration": "structure note, not a safety signal"
+  },
+  {
+   "id": "SR-ST-006",
+   "severity": "high",
+   "about": "frontmatter or manifest cannot be parsed safely"
+  },
+  {
+   "id": "SR-ST-007",
+   "severity": "medium",
+   "about": "no SKILL.md found"
+  },
+  {
+   "id": "SR-TX-001",
+   "severity": "medium",
+   "about": "invisible character in text"
+  },
+  {
+   "id": "SR-TX-002",
+   "severity": "medium",
+   "about": "tells the agent to proceed without asking"
+  },
+  {
+   "id": "SR-TX-003",
+   "severity": "high",
+   "about": "secret committed in the skill"
+  },
+  {
+   "id": "SR-TX-004",
+   "severity": "info",
+   "about": "mentions a prompt-injection phrase as an example"
+  },
+  {
+   "id": "SR-SF-001",
+   "severity": "high",
+   "about": "auto-run component that cannot be analysed"
+  },
+  {
+   "id": "SR-SF-002",
+   "severity": "high",
+   "about": "hook command points outside the plugin"
+  },
+  {
+   "id": "SR-SF-003",
+   "severity": "medium",
+   "about": "hooks declared in frontmatter stay active for the session"
+  },
+  {
+   "id": "SR-SF-004",
+   "severity": "low",
+   "about": "allowed-tools pre-approves an unrestricted tool",
+   "calibration": "calibration: 78 of 341 known-good units pre-approve a tool; reported for Bash and * only"
+  },
+  {
+   "id": "SR-SF-005",
+   "severity": "medium",
+   "about": "package install scripts run on install"
+  },
+  {
+   "id": "SR-SF-006",
+   "severity": "high",
+   "about": "auto-run component runs an unpinned package from the network"
+  },
+  {
+   "id": "SR-SF-007",
+   "severity": "high",
+   "about": "script writes agent settings or another skill"
+  },
+  {
+   "id": "SR-SF-008",
+   "severity": "high",
+   "about": "runs an agent with approvals switched off"
+  },
+  {
+   "id": "SR-SF-009",
+   "severity": "info",
+   "about": "auto-run component present"
+  },
+  {
+   "id": "SR-CD-001",
+   "severity": "high",
+   "about": "code in a language that is not analysed"
+  },
+  {
+   "id": "SR-CD-002",
+   "severity": "medium",
+   "about": "Python file could not be parsed, patterns only"
+  },
+  {
+   "id": "SR-CD-003",
+   "severity": "high",
+   "about": "dynamic code execution",
+   "calibration": "raised to high: zero known-good skills or plugins run code built at run time; an independent set shows it is a common attack shape"
+  },
+  {
+   "id": "SR-CD-004",
+   "severity": "high",
+   "about": "downloads and runs an installer script"
+  },
+  {
+   "id": "SR-DF-001",
+   "severity": "high",
+   "about": "network target is built at run time and is not explained"
+  },
+  {
+   "id": "SR-DF-002",
+   "severity": "medium",
+   "about": "auto-run component is not mentioned in the docs"
+  },
+  {
+   "id": "SR-DF-003",
+   "severity": "medium",
+   "about": "writes outside its own folder without saying so"
+  },
+  {
+   "id": "SR-DF-004",
+   "severity": "high",
+   "about": "contacts a server that the docs never mention"
+  },
+  {
+   "id": "SR-DF-005",
+   "severity": "medium",
+   "about": "installs packages at run time without saying so"
+  },
+  {
+   "id": "SR-DF-006",
+   "severity": "info",
+   "about": "declared but not found in the code"
+  },
+  {
+   "id": "SR-DF-007",
+   "severity": "info",
+   "about": "reads standard input"
+  },
+  {
+   "id": "SR-DF-008",
+   "severity": "low",
+   "about": "reads a secret from the environment"
+  },
+  {
+   "id": "SR-DF-009",
+   "severity": "medium",
+   "about": "reads a .env file"
+  },
+  {
+   "id": "SR-DF-010",
+   "severity": "medium",
+   "about": "refers to a credentials path"
+  },
+  {
+   "id": "SR-DF-011",
+   "severity": "low",
+   "about": "network target is set at run time",
+   "calibration": "calibration: dynamic targets with network use named in the docs are routine"
+  },
+  {
+   "id": "SR-DF-012",
+   "severity": "medium",
+   "about": "capabilities file is not valid"
+  },
+  {
+   "id": "SR-DF-013",
+   "severity": "info",
+   "about": "instructions lead the agent to a connected service",
+   "calibration": "calibration: 36 known-good units name a connected service; shown in the label"
+  },
+  {
+   "id": "SR-CL-001",
+   "severity": "medium",
+   "about": "a softer documented claim does not match the code"
+  },
+  {
+   "id": "SR-TX-005",
+   "severity": "medium",
+   "about": "docs tell the agent to download and run a well-known installer"
+  },
+  {
+   "id": "SR-CD-005",
+   "severity": "medium",
+   "about": "bundled or minified code, patterns only"
+  },
+  {
+   "id": "SR-SF-010",
+   "severity": "medium",
+   "status": "active",
+   "about": "a script writes into a project's .claude folder"
+  },
+  {
+   "id": "SR-ST-008",
+   "severity": "low",
+   "status": "active",
+   "about": "frontmatter uses YAML the reader does not parse; fields read line by line"
+  },
+  {
+   "id": "SR-TX-006",
+   "severity": "medium",
+   "status": "active",
+   "about": "a reference document suggests download-and-run from a host that is not a known installer"
+  },
+  {
+   "id": "SR-DF-014",
+   "severity": "high",
+   "status": "active",
+   "about": "points at a tunnelling, paste or throwaway collection service"
+  },
+  {
+   "id": "SR-DF-015",
+   "severity": "medium",
+   "status": "active",
+   "about": "enumerates every environment variable"
+  },
+  {
+   "id": "SR-DF-016",
+   "severity": "high",
+   "status": "active",
+   "about": "redirects the package manager to another registry"
+  },
+  {
+   "id": "SR-DF-018",
+   "severity": "high",
+   "status": "active",
+   "about": "collects every environment variable and prints or sends it"
+  },
+  {
+   "id": "SR-TX-007",
+   "severity": "medium",
+   "status": "active",
+   "about": "tells the agent to follow instructions found in outside content"
+  },
+  {
+   "id": "SR-DF-019",
+   "severity": "high",
+   "status": "active",
+   "about": "points at a raw IP address instead of a named server"
+  },
+  {
+   "id": "SR-TX-008",
+   "severity": "high",
+   "status": "active",
+   "about": "the instructions point at a password-protected archive"
+  },
+  {
+   "id": "SR-TX-009",
+   "severity": "high",
+   "status": "active",
+   "about": "the instructions require installing software from a free-hosting site or a short link"
+  },
+  {
+   "id": "SR-SF-011",
+   "severity": "high",
+   "status": "active",
+   "about": "a hook answers permission requests on the user's behalf"
+  },
+  {
+   "id": "SR-CD-006",
+   "severity": "high",
+   "status": "active",
+   "about": "removes the macOS quarantine mark from a file"
+  },
+  {
+   "id": "SR-DF-020",
+   "severity": "medium",
+   "about": "a command of the skill writes to the skills folder or the agent settings, and the skill's capabilities file says so",
+   "calibration": "added with the add command: an installer that states what it installs is a note, the same way a declared server is. Undeclared stays SR-SF-007; a component that starts by itself stays the red line SR-RL-05 whatever is declared"
+  }
+ ]
+}

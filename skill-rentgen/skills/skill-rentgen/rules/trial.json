@@ -1,0 +1,66 @@
+{
+ "rules_version": "2026.11.1",
+ "note": "Rules for the trial run. They describe what a skill's own commands did inside the sandbox, not what its files contain.",
+ "rules": [
+  {
+   "id": "SR-TR-001",
+   "severity": "red",
+   "status": "active",
+   "about": "a decoy secret was read during the trial, or the keychain was asked"
+  },
+  {
+   "id": "SR-TR-002",
+   "severity": "red",
+   "status": "active",
+   "about": "the content of a decoy left the process: passed to a command, written to a new file, or printed"
+  },
+  {
+   "id": "SR-TR-003",
+   "severity": "high",
+   "status": "active",
+   "about": "a network attempt to a server the skill does not declare"
+  },
+  {
+   "id": "SR-TR-004",
+   "severity": "red",
+   "status": "active",
+   "about": "agent settings, shell start-up files, persistence locations or a decoy were changed"
+  },
+  {
+   "id": "SR-TR-005",
+   "severity": "high",
+   "status": "active",
+   "about": "a package installer was called"
+  },
+  {
+   "id": "SR-TR-006",
+   "severity": "high",
+   "status": "active",
+   "about": "project keys, shell history or the conversation record were read, or a secret file was looked for without being read"
+  },
+  {
+   "id": "SR-TR-007",
+   "severity": "medium",
+   "status": "active",
+   "about": "files written or removed in the home or project folder, outside the skill's own folder"
+  },
+  {
+   "id": "SR-TR-008",
+   "severity": "low",
+   "status": "active",
+   "about": "a network attempt to a server the skill declares"
+  },
+  {
+   "id": "SR-TR-009",
+   "severity": "info",
+   "status": "active",
+   "about": "a command timed out, could not start, or needs a program the sandbox image lacks"
+  },
+  {
+   "id": "SR-TR-010",
+   "severity": "high",
+   "status": "active",
+   "about": "administrator rights, desktop scripting, quarantine removal or a container engine were asked for"
+  }
+ ]
+}

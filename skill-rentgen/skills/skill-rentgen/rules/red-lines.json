@@ -1,0 +1,128 @@
+{
+ "rules_version": "2026.11.1",
+ "rules": [
+  {
+   "id": "SR-RL-01",
+   "severity": "red",
+   "status": "active",
+   "about": "credentials read by code"
+  },
+  {
+   "id": "SR-RL-02",
+   "severity": "red",
+   "status": "active",
+   "about": "downloaded content is executed"
+  },
+  {
+   "id": "SR-RL-03",
+   "severity": "high",
+   "status": "downgraded",
+   "about": "obfuscated string passed to exec or eval",
+   "calibration": "downgraded from red at design time: a long encoded string passed to exec is also how some build tools embed assets. High keeps it a caution"
+  },
+  {
+   "id": "SR-RL-04",
+   "severity": "red",
+   "status": "active",
+   "about": "executable binary or bytecode without source"
+  },
+  {
+   "id": "SR-RL-05",
+   "severity": "red",
+   "status": "active",
+   "about": "auto-run component writes agent settings or another skill"
+  },
+  {
+   "id": "SR-RL-06",
+   "severity": "red",
+   "status": "active",
+   "about": "instructs the agent to hide actions, drop approvals or send data quietly"
+  },
+  {
+   "id": "SR-RL-07",
+   "severity": "red",
+   "status": "active",
+   "about": "hidden text"
+  },
+  {
+   "id": "SR-RL-08",
+   "severity": "red",
+   "status": "active",
+   "about": "a documented promise is contradicted by the code"
+  },
+  {
+   "id": "SR-RL-09",
+   "severity": "red",
+   "status": "deferred",
+   "about": "internal hash manifest mismatch (part B)"
+  },
+  {
+   "id": "SR-RL-10",
+   "severity": "red",
+   "status": "active",
+   "about": "file shadows a standard library module where code runs"
+  },
+  {
+   "id": "SR-RL-11",
+   "severity": "medium",
+   "status": "downgraded",
+   "about": "paid service required without saying so",
+   "calibration": "downgraded from red at design time: a paid service is a cost to know about, not a safety problem"
+  },
+  {
+   "id": "SR-RL-12",
+   "severity": "red",
+   "status": "active",
+   "about": "instructs the agent to load instructions from a remote address at run time"
+  },
+  {
+   "id": "SR-RL-13",
+   "severity": "red",
+   "status": "active",
+   "about": "auto-run component downloads and runs code"
+  },
+  {
+   "id": "SR-RL-14",
+   "severity": "red",
+   "status": "active",
+   "about": "bin file named like a well-known command"
+  },
+  {
+   "id": "SR-RL-15",
+   "severity": "high",
+   "status": "downgraded",
+   "about": "undeclared in-process module",
+   "calibration": "downgraded from red: in-process modules are an official Claude Code feature, used by four plugins in Anthropic's own directory"
+  },
+  {
+   "id": "SR-IN-001",
+   "severity": "red",
+   "status": "active",
+   "about": "intake refused: unsafe link or archive entry"
+  },
+  {
+   "id": "SR-IN-002",
+   "severity": "red",
+   "status": "active",
+   "about": "intake refused: two paths collide"
+  },
+  {
+   "id": "SR-IN-003",
+   "severity": "red",
+   "status": "active",
+   "about": "intake refused: beyond hard limits"
+  },
+  {
+   "id": "SR-IN-011",
+   "severity": "red",
+   "status": "active",
+   "about": "intake refused: an archive entry escapes the folder, or the archive is damaged"
+  },
+  {
+   "id": "SR-RL-16",
+   "severity": "red",
+   "status": "active",
+   "about": "shows a dialog that asks for the user's password"
+  }
+ ]
+}

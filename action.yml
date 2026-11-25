@@ -1,0 +1,56 @@
+name: SkillRentgen
+description: Check an agent skill or plugin before it is installed. Reads the files and never runs them.
+author: Nimrod Zemel
+branding:
+  icon: shield
+  color: blue
+inputs:
+  path:
+    description: Folder of the skill or plugin to check.
+    default: "."
+  fail-on:
+    description: "caution: fail on caution and on do-not-install. block: fail only on do-not-install."
+    default: caution
+  lang:
+    description: "Language of the report: he, en or both."
+    default: en
+  sarif:
+    description: Also write SARIF 2.1.0 to this file. Leave empty for none.
+    default: ""
+outputs:
+  verdict:
+    description: "approve, approve_with_notes, caution, blocked or reject. Empty when the tool itself failed."
+    value: ${{ steps.scan.outputs.verdict }}
+  report:
+    description: Folder that holds the reports.
+    value: ${{ steps.scan.outputs.report }}
+runs:
+  using: composite
+  steps:
+    - id: scan
+      shell: bash
+      env:
+        SR_PATH: ${{ inputs.path }}
+        SR_FAIL_ON: ${{ inputs.fail-on }}
+        SR_LANG: ${{ inputs.lang }}
+        SR_SARIF: ${{ inputs.sarif }}
+        PYTHONDONTWRITEBYTECODE: "1"
+      run: |
+        set -u
+        tool="$GITHUB_ACTION_PATH/skill-rentgen/skills/skill-rentgen/scripts/skill_rentgen.py"
+        out="$RUNNER_TEMP/skill-rentgen-report"
+        code=0
+        python3 "$tool" scan "$SR_PATH" --lang "$SR_LANG" --fail-on "$SR_FAIL_ON" --out "$out" || code=$?
+        echo "report=$out" >> "$GITHUB_OUTPUT"
+        if [ "$code" != 10 ]; then
+          verdict=$(python3 -c 'import glob, json, sys; print(json.load(open(sorted(glob.glob(sys.argv[1] + "/*.report.json"))[0], encoding="utf-8"))["verdict"]["internal"])' "$out")
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          for file in "$out"/*.en.md "$out"/*.he.md; do
+            case "$file" in *sandbox-prompt*) continue;; esac
+            [ -f "$file" ] && cat "$file" >> "$GITHUB_STEP_SUMMARY" && break
+          done
+          if [ -n "$SR_SARIF" ]; then
+            python3 "$tool" scan "$SR_PATH" --lang en --fail-on block --out "$out" --output-format sarif > "$SR_SARIF" || true
+          fi
+        fi
+        exit "$code"

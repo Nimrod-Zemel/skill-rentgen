@@ -1,0 +1,7 @@
+- id: skill-rentgen
+  name: SkillRentgen
+  description: Check the skill or plugin in this repository. Fails on "do not install".
+  entry: tools/pre-commit.sh
+  language: script
+  pass_filenames: false
+  always_run: true

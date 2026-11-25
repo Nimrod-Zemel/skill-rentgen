@@ -1,0 +1,2500 @@
+{
+ "$id": "https://raw.githubusercontent.com/yaniv-golan/cowork-harness/main/schema/run-result.json",
+ "$schema": "http://json-schema.org/draft-07/schema#",
+ "properties": {
+  "$schema": {
+   "type": "string"
+  },
+  "ablated": {
+   "type": "boolean"
+  },
+  "agentEnvPassthrough": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "answerChannel": {
+   "enum": [
+    "none"
+   ],
+   "type": "string"
+  },
+  "apiRetries": {
+   "properties": {
+    "count": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "delayMs": {
+     "minimum": 0,
+     "type": "number"
+    },
+    "subagentCount": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "subagentDelayMs": {
+     "minimum": 0,
+     "type": "number"
+    }
+   },
+   "required": [
+    "count",
+    "delayMs",
+    "subagentCount",
+    "subagentDelayMs"
+   ],
+   "type": "object"
+  },
+  "artifacts": {
+   "items": {
+    "properties": {
+     "bytes": {
+      "type": "number"
+     },
+     "path": {
+      "type": "string"
+     },
+     "preRun": {
+      "const": true,
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "path",
+     "bytes"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "assertions": {
+   "type": "array"
+  },
+  "authoredCapture": {
+   "properties": {
+    "perFileBytes": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "scratchpadWalked": {
+     "type": "boolean"
+    },
+    "totalBytes": {
+     "minimum": 1,
+     "type": "integer"
+    }
+   },
+   "required": [
+    "perFileBytes",
+    "totalBytes",
+    "scratchpadWalked"
+   ],
+   "type": "object"
+  },
+  "baseline": {
+   "type": "string"
+  },
+  "capabilityProbe": {
+   "enum": [
+    "definitive",
+    "unverified",
+    "skipped"
+   ],
+   "type": "string"
+  },
+  "command": {
+   "enum": [
+    "run",
+    "skill",
+    "record",
+    "chat",
+    "replay"
+   ],
+   "type": "string"
+  },
+  "context": {
+   "properties": {
+    "availableSkills": {
+     "items": {
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "whenToUse": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "id"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "mcpServers": {
+     "items": {
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "tools": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "contextEvents": {
+   "items": {
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "cost": {
+   "properties": {
+    "raw": {
+     "type": "object"
+    },
+    "usd": {
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "deciderCostUsd": {
+   "minimum": 0,
+   "type": "number"
+  },
+  "deciderUsage": {
+   "properties": {
+    "cache_creation_input_tokens": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "cache_read_input_tokens": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "input_tokens": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "output_tokens": {
+     "minimum": 0,
+     "type": "integer"
+    }
+   },
+   "required": [
+    "input_tokens",
+    "output_tokens",
+    "cache_read_input_tokens",
+    "cache_creation_input_tokens"
+   ],
+   "type": "object"
+  },
+  "decisions": {
+   "items": {
+    "properties": {
+     "by": {
+      "type": "string"
+     },
+     "decision": {
+      "type": "string"
+     },
+     "detail": {},
+     "effort": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "model": {
+      "type": "string"
+     },
+     "name": {
+      "type": "string"
+     },
+     "questions": {
+      "items": {
+       "properties": {
+        "header": {
+         "type": "string"
+        },
+        "multiSelect": {
+         "type": "boolean"
+        },
+        "options": {
+         "items": {
+          "properties": {
+           "description": {
+            "type": "string"
+           },
+           "label": {
+            "type": "string"
+           }
+          },
+          "required": [
+           "label"
+          ],
+          "type": "object"
+         },
+         "type": "array"
+        },
+        "question": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "question",
+        "options"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "rationale": {
+      "type": "string"
+     },
+     "requestId": {
+      "type": "string"
+     },
+     "toolUseId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "name",
+     "decision"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "deviceBridge": {
+   "additionalProperties": false,
+   "properties": {
+    "alwaysLoad": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "auditInconsistent": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "auditUnreadable": {
+     "type": "string"
+    },
+    "bypassedDeletes": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "deleteRefusal": {
+     "enum": [
+      "reported",
+      "enforced"
+     ],
+     "type": "string"
+    },
+    "divergences": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "egress": {
+     "enum": [
+      "allowlist",
+      "unrestricted"
+     ],
+     "type": "string"
+    },
+    "folders": {
+     "items": {
+      "additionalProperties": false,
+      "properties": {
+       "mode": {
+        "enum": [
+         "r",
+         "rw",
+         "rwd"
+        ],
+        "type": "string"
+       },
+       "name": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "mode"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "grants": {
+     "items": {
+      "additionalProperties": false,
+      "properties": {
+       "answeredBy": {
+        "enum": [
+         "script",
+         "decider",
+         "human",
+         "bypassPermissions"
+        ],
+        "type": "string"
+       },
+       "folders": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "turn": {
+        "type": "integer"
+       }
+      },
+      "required": [
+       "folders",
+       "answeredBy",
+       "turn"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "measuredOn": {
+     "type": "string"
+    },
+    "permissionMode": {
+     "type": "string"
+    },
+    "permissionModeSource": {
+     "enum": [
+      "session",
+      "bridge-default"
+     ],
+     "type": "string"
+    },
+    "promptNote": {
+     "enum": [
+      "included",
+      "omitted"
+     ],
+     "type": "string"
+    },
+    "promptNoteBasis": {
+     "enum": [
+      "model-report"
+     ],
+     "type": "string"
+    },
+    "refusedDeletes": {
+     "minimum": 0,
+     "type": "integer"
+    },
+    "served": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "required": [
+    "served",
+    "alwaysLoad",
+    "measuredOn",
+    "promptNoteBasis",
+    "promptNote",
+    "permissionMode",
+    "permissionModeSource",
+    "egress",
+    "folders",
+    "divergences"
+   ],
+   "type": "object"
+  },
+  "durationMs": {
+   "type": "number"
+  },
+  "effectiveFidelity": {
+   "type": "string"
+  },
+  "egress": {
+   "type": "array"
+  },
+  "errorSource": {
+   "enum": [
+    "spawn",
+    "protocol",
+    "exit",
+    "agent",
+    "result",
+    "no_result",
+    "timeout",
+    "decider_timeout",
+    "answer_channel_violation"
+   ],
+   "type": "string"
+  },
+  "evidenceErrors": {
+   "properties": {
+    "egressParse": {
+     "type": "number"
+    },
+    "presentFilesMalformed": {
+     "type": "number"
+    },
+    "protocolMalformed": {
+     "type": "number"
+    },
+    "taskTracking": {
+     "type": "number"
+    },
+    "webSearchParse": {
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "execution": {
+   "properties": {
+    "environmentId": {
+     "type": "string"
+    },
+    "location": {
+     "enum": [
+      "local",
+      "cloud"
+     ],
+     "type": "string"
+    },
+    "taskKind": {
+     "enum": [
+      "interactive",
+      "scheduled"
+     ],
+     "type": "string"
+    }
+   },
+   "required": [
+    "location"
+   ],
+   "type": "object"
+  },
+  "fidelity": {
+   "type": "string"
+  },
+  "fidelityWarnings": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "fileToolAttempts": {
+   "items": {
+    "properties": {
+     "gatePath": {
+      "type": "string"
+     },
+     "origin": {
+      "enum": [
+       "main",
+       "subagent",
+       "unknown"
+      ]
+     },
+     "parentToolUseId": {
+      "type": "string"
+     },
+     "paths": {
+      "properties": {
+       "file_path": {
+        "type": "string"
+       },
+       "path": {
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "tool": {
+      "type": "string"
+     },
+     "toolUseId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "tool",
+     "paths",
+     "origin"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "finalMessage": {
+   "type": "string"
+  },
+  "fingerprint": {
+   "properties": {
+    "agentScope": {
+     "enum": [
+      "skill"
+     ],
+     "type": "string"
+    },
+    "baseline": {
+     "type": "string"
+    },
+    "contentSig": {
+     "type": "string"
+    },
+    "fileSigs": {
+     "items": {
+      "items": {
+       "type": "string"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+     },
+     "type": "array"
+    },
+    "fileSigsOmitted": {
+     "type": "boolean"
+    },
+    "frozen": {
+     "type": "boolean"
+    },
+    "hashFormat": {
+     "enum": [
+      "jcs1"
+     ],
+     "type": "string"
+    },
+    "mode": {
+     "enum": [
+      "git",
+      "raw"
+     ],
+     "type": "string"
+    },
+    "promptAssetsHash": {
+     "type": "string"
+    },
+    "sharedHash": {
+     "type": "string"
+    },
+    "skillHash": {
+     "type": "string"
+    },
+    "skillScope": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "skillSources": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "workspaceFixtureFileSigs": {
+     "items": {
+      "items": {
+       "type": "string"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "type": "array"
+     },
+     "type": "array"
+    },
+    "workspaceFixtureSig": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "baseline"
+   ],
+   "type": "object"
+  },
+  "fsDiff": {
+   "additionalProperties": false,
+   "properties": {
+    "findings": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "reason": {
+     "enum": [
+      "baseline-incomplete",
+      "post-walk-incomplete"
+     ],
+     "type": "string"
+    },
+    "status": {
+     "enum": [
+      "clean",
+      "findings",
+      "unavailable"
+     ],
+     "type": "string"
+    }
+   },
+   "required": [
+    "status",
+    "findings"
+   ],
+   "type": "object"
+  },
+  "gateDeliveries": {
+   "type": "array"
+  },
+  "gateProvenance": {
+   "properties": {
+    "bySource": {
+     "additionalProperties": {
+      "type": "number"
+     },
+     "type": "object"
+    },
+    "gates": {
+     "items": {
+      "properties": {
+       "answer": {
+        "type": "string"
+       },
+       "answeredBy": {
+        "type": "string"
+       },
+       "effort": {
+        "type": "string"
+       },
+       "model": {
+        "type": "string"
+       },
+       "question": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "question",
+       "answeredBy",
+       "answer"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "total": {
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "generator": {
+   "type": "string"
+  },
+  "hookEvents": {
+   "items": {
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "hookFailureBlocks": {
+   "oneOf": [
+    {
+     "additionalProperties": false,
+     "properties": {
+      "events": {
+       "items": {
+        "type": "string"
+       },
+       "type": "array"
+      }
+     },
+     "required": [
+      "events"
+     ],
+     "type": "object"
+    },
+    {
+     "additionalProperties": false,
+     "properties": {
+      "unknown": {
+       "const": true
+      },
+      "why": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "unknown",
+      "why"
+     ],
+     "type": "object"
+    }
+   ]
+  },
+  "hostInputs": {
+   "additionalProperties": false,
+   "properties": {
+    "plugins": {
+     "items": {
+      "additionalProperties": false,
+      "properties": {
+       "gitCommitSha": {
+        "pattern": "^[0-9a-f]{7,64}$",
+        "type": "string"
+       },
+       "key": {
+        "type": "string"
+       },
+       "sha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+       },
+       "version": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "key",
+       "version",
+       "sha256"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "setHash": {
+     "pattern": "^[0-9a-f]{64}$",
+     "type": "string"
+    },
+    "shadowed": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "skills": {
+     "items": {
+      "additionalProperties": false,
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "sha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "sha256"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "skipped": {
+     "items": {
+      "additionalProperties": false,
+      "properties": {
+       "key": {
+        "type": "string"
+       },
+       "reason": {
+        "enum": [
+         "not-installed",
+         "not-user-scope"
+        ]
+       }
+      },
+      "required": [
+       "key",
+       "reason"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    }
+   },
+   "required": [
+    "plugins",
+    "skills",
+    "setHash"
+   ],
+   "type": "object"
+  },
+  "infraErrors": {
+   "items": {
+    "properties": {
+     "message": {
+      "type": "string"
+     },
+     "source": {
+      "enum": [
+       "hostloop-sidecar",
+       "hostloop-exec",
+       "egress-sidecar",
+       "device-container",
+       "device-shim",
+       "device-exec",
+       "search-corpus"
+      ],
+      "type": "string"
+     }
+    },
+    "required": [
+     "source",
+     "message"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "lane": {
+   "enum": [
+    "local",
+    "remote"
+   ],
+   "type": "string"
+  },
+  "mcpErrors": {
+   "items": {
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "metrics": {
+   "items": {
+    "additionalProperties": false,
+    "oneOf": [
+     {
+      "not": {
+       "properties": {
+        "unavailable": {}
+       },
+       "required": [
+        "unavailable"
+       ]
+      },
+      "properties": {
+       "value": {}
+      },
+      "required": [
+       "value"
+      ]
+     },
+     {
+      "not": {
+       "properties": {
+        "value": {}
+       },
+       "required": [
+        "value"
+       ]
+      },
+      "properties": {
+       "unavailable": {}
+      },
+      "required": [
+       "unavailable"
+      ]
+     }
+    ],
+    "properties": {
+     "command": {
+      "additionalProperties": false,
+      "properties": {
+       "carried": {
+        "const": true
+       },
+       "durationMs": {
+        "type": "number"
+       },
+       "eventsSha256": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+       },
+       "frozen": {
+        "const": true
+       },
+       "interpreter": {
+        "type": "string"
+       },
+       "script": {
+        "type": "string"
+       },
+       "scriptSha256": {
+        "pattern": "^([0-9a-f]{64})?$",
+        "type": "string"
+       },
+       "sig": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "sig",
+       "script",
+       "scriptSha256"
+      ],
+      "type": "object"
+     },
+     "id": {
+      "type": "string"
+     },
+     "unavailable": {
+      "enum": [
+       "missing_artifact",
+       "missing_path",
+       "not_json",
+       "not_a_number",
+       "readonly",
+       "size",
+       "remote",
+       "pruned",
+       "pre_run",
+       "no_manifest",
+       "command_failed",
+       "command_timeout",
+       "command_output",
+       "command_changed",
+       "command_missing",
+       "command_not_allowed",
+       "nondeterministic",
+       "no_events"
+      ],
+      "type": "string"
+     },
+     "value": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "id"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "missingCapabilityUse": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "mode": {
+   "enum": [
+    "run",
+    "chat"
+   ],
+   "type": "string"
+  },
+  "modelFallbacks": {
+   "items": {
+    "properties": {
+     "fallbackModel": {
+      "type": "string"
+     },
+     "originalModel": {
+      "type": "string"
+     },
+     "trigger": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "trigger"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "modelPinHonored": {
+   "type": "boolean"
+  },
+  "modelSource": {
+   "enum": [
+    "user_setting",
+    "unresolved"
+   ],
+   "type": "string"
+  },
+  "modelUsage": {
+   "additionalProperties": {
+    "additionalProperties": false,
+    "properties": {
+     "cacheCreationEphemeral1hInputTokens": {
+      "type": "number"
+     },
+     "cacheCreationEphemeral5mInputTokens": {
+      "type": "number"
+     },
+     "cacheCreationInputTokens": {
+      "type": "number"
+     },
+     "cacheReadInputTokens": {
+      "type": "number"
+     },
+     "canonicalModel": {
+      "type": "string"
+     },
+     "contextWindow": {
+      "type": "number"
+     },
+     "costBasis": {
+      "type": "string"
+     },
+     "costUSD": {
+      "type": "number"
+     },
+     "inputTokens": {
+      "type": "number"
+     },
+     "maxOutputTokens": {
+      "type": "number"
+     },
+     "outputTokens": {
+      "type": "number"
+     },
+     "provider": {
+      "type": "string"
+     },
+     "thinkingTokens": {
+      "type": "number"
+     },
+     "webSearchRequests": {
+      "type": "number"
+     }
+    },
+    "type": "object"
+   },
+   "type": "object"
+  },
+  "models": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "mutation": {
+   "properties": {
+    "caps": {
+     "properties": {
+      "perFile": {
+       "type": "number"
+      },
+      "total": {
+       "type": "number"
+      }
+     },
+     "type": "object"
+    },
+    "eligible": {
+     "type": "number"
+    },
+    "sampled": {
+     "type": "number"
+    },
+    "truncatedBy": {
+     "enum": [
+      "per-file",
+      "total",
+      null
+     ],
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "uncaught": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "type": "object"
+  },
+  "nonDeterministic": {
+   "type": "boolean"
+  },
+  "nonDeterministicTerminal": {
+   "type": "boolean"
+  },
+  "nonReproducibleAnswers": {
+   "type": "array"
+  },
+  "outDir": {
+   "type": "string"
+  },
+  "outcome": {
+   "enum": [
+    "errored",
+    "no_deliverable",
+    "delivered_with_verdict_fail",
+    "delivered_clean"
+   ],
+   "type": "string"
+  },
+  "outputsDir": {
+   "type": "string"
+  },
+  "outputsMountMode": {
+   "enum": [
+    "rw",
+    "rwd"
+   ],
+   "type": "string"
+  },
+  "partial": {
+   "type": "boolean"
+  },
+  "partlyScriptedGates": {
+   "items": {
+    "properties": {
+     "matched": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "requestId": {
+      "type": "string"
+     },
+     "unmatched": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "matched",
+     "unmatched"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "pathDenials": {
+   "items": {
+    "properties": {
+     "agentId": {
+      "type": "string"
+     },
+     "callbackId": {
+      "type": "string"
+     },
+     "decision": {
+      "enum": [
+       "deny"
+      ]
+     },
+     "decisionReasonType": {
+      "type": "string"
+     },
+     "path": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string"
+     },
+     "source": {
+      "enum": [
+       "pretooluse",
+       "can_use_tool",
+       "permission_denied"
+      ]
+     },
+     "tool": {
+      "type": "string"
+     },
+     "toolUseId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "source",
+     "tool",
+     "decision"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "permissiveAutoAllow": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "preRunHashes": {
+   "additionalProperties": {
+    "type": [
+     "string",
+     "null"
+    ]
+   },
+   "type": "object"
+  },
+  "preRunLinkAware": {
+   "type": "boolean"
+  },
+  "preRunOrigin": {
+   "enum": [
+    "local-walk",
+    "remote-unavailable",
+    "local-unreadable"
+   ],
+   "type": "string"
+  },
+  "preRunPaths": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "presentFilesCalls": {
+   "type": "integer"
+  },
+  "presentedFiles": {
+   "items": {
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "prompt": {
+   "type": "string"
+  },
+  "readonlyFolderRoots": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "redundantToolCalls": {
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "argHash": {
+      "type": "string"
+     },
+     "count": {
+      "type": "number"
+     },
+     "name": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "argHash",
+     "count"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "referencesAccessed": {
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "path": {
+      "type": "string"
+     },
+     "via": {
+      "items": {
+       "enum": [
+        "read",
+        "grep",
+        "bash"
+       ],
+       "type": "string"
+      },
+      "type": "array"
+     }
+    },
+    "required": [
+     "path",
+     "via"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "referencesRead": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "requiresCapabilityUnmet": {
+   "properties": {
+    "caps": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "reason": {
+     "enum": [
+      "omitted",
+      "unverifiable",
+      "unknown"
+     ],
+     "type": "string"
+    }
+   },
+   "type": "object"
+  },
+  "resources": {
+   "type": "object"
+  },
+  "result": {
+   "enum": [
+    "success",
+    "error"
+   ],
+   "type": "string"
+  },
+  "resultErrorKind": {
+   "enum": [
+    "transport",
+    "agent",
+    "usage_limit"
+   ],
+   "type": "string"
+  },
+  "resultSubtype": {
+   "type": "string"
+  },
+  "runLabel": {
+   "type": "string"
+  },
+  "scan": {
+   "properties": {
+    "hostPathLeaked": {
+     "type": "boolean"
+    },
+    "hostPathsFromInputs": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "inputHostPathTokens": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "mountDeletes": {
+     "items": {
+      "properties": {
+       "command": {
+        "type": "string"
+       },
+       "mount": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "mount",
+       "command"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "outputsDeleteBasis": {
+     "items": {
+      "enum": [
+       "fs-diff",
+       "named",
+       "inferred"
+      ],
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "outputsDeletes": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array"
+    },
+    "selfHealRan": {
+     "type": "boolean"
+    }
+   },
+   "type": "object"
+  },
+  "scenario": {
+   "type": "string"
+  },
+  "scratchpadEvidenceComplete": {
+   "type": "boolean"
+  },
+  "scrubSet": {
+   "additionalProperties": false,
+   "properties": {
+    "keyId": {
+     "pattern": "^[ghjkmnpqrstvwxyz]{16}$",
+     "type": "string"
+    },
+    "v": {
+     "const": 1
+    },
+    "values": {
+     "items": {
+      "pattern": "^[ghjkmnpqrstvwxyz]{32}$",
+      "type": "string"
+     },
+     "type": "array"
+    }
+   },
+   "required": [
+    "v",
+    "keyId",
+    "values"
+   ],
+   "type": "object"
+  },
+  "scrubSetUnavailable": {
+   "type": "string"
+  },
+  "searchCorpus": {
+   "additionalProperties": false,
+   "properties": {
+    "calls": {
+     "items": {
+      "additionalProperties": false,
+      "properties": {
+       "agentId": {
+        "type": "string"
+       },
+       "allowedDomains": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "blockedDomains": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "exactUrls": {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       "ordinal": {
+        "minimum": 1,
+        "type": "integer"
+       },
+       "provisional": {
+        "const": true
+       },
+       "query": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "reassignedFrom": {
+        "additionalProperties": false,
+        "properties": {
+         "agentId": {
+          "type": "string"
+         },
+         "ordinal": {
+          "minimum": 1,
+          "type": "integer"
+         }
+        },
+        "required": [
+         "ordinal"
+        ],
+        "type": "object"
+       },
+       "rounds": {
+        "items": {
+         "additionalProperties": false,
+         "properties": {
+          "match": {
+           "enum": [
+            "exact",
+            "nearby"
+           ],
+           "type": "string"
+          },
+          "nscore": {
+           "maximum": 1,
+           "minimum": 0,
+           "type": "number"
+          },
+          "recordId": {
+           "type": "string"
+          },
+          "sourceQuery": {
+           "type": "string"
+          },
+          "sourceSkill": {
+           "type": [
+            "string",
+            "null"
+           ]
+          },
+          "urls": {
+           "items": {
+            "type": "string"
+           },
+           "type": "array"
+          }
+         },
+         "required": [
+          "match",
+          "nscore",
+          "sourceQuery",
+          "recordId",
+          "sourceSkill",
+          "urls"
+         ],
+         "type": "object"
+        },
+        "type": "array"
+       },
+       "toolUseId": {
+        "type": "string"
+       },
+       "unpaired": {
+        "const": true
+       },
+       "verdict": {
+        "enum": [
+         "served",
+         "miss",
+         "refused"
+        ],
+        "type": "string"
+       }
+      },
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "credentialSource": {
+     "enum": [
+      "env"
+     ],
+     "type": "string"
+    },
+    "interposition": {
+     "enum": [
+      "proxy-env+ca"
+     ],
+     "type": "string"
+    },
+    "label": {
+     "type": "string"
+    },
+    "metrics": {
+     "additionalProperties": false,
+     "properties": {
+      "attributionUncertain": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "byAgent": {
+       "additionalProperties": {
+        "additionalProperties": false,
+        "properties": {
+         "miss": {
+          "minimum": 0,
+          "type": "integer"
+         },
+         "refused": {
+          "minimum": 0,
+          "type": "integer"
+         },
+         "served": {
+          "minimum": 0,
+          "type": "integer"
+         }
+        },
+        "required": [
+         "served",
+         "miss",
+         "refused"
+        ],
+        "type": "object"
+       },
+       "type": "object"
+      },
+      "liveServerTools": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "meanTopScore": {
+       "maximum": 1,
+       "minimum": 0,
+       "type": "number"
+      },
+      "miss": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "noRequest": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "passedThroughWithSearchTool": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "reassigned": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "refused": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "requests": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "retriesFolded": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "served": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "shapeUnfenced": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "toolUses": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "toolUsesExpected": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "unattributed": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "unattributedExpected": {
+       "minimum": 0,
+       "type": "integer"
+      },
+      "unfinished": {
+       "minimum": 0,
+       "type": "integer"
+      }
+     },
+     "required": [
+      "requests",
+      "served",
+      "miss",
+      "refused",
+      "retriesFolded",
+      "unfinished",
+      "passedThroughWithSearchTool",
+      "toolUses",
+      "noRequest",
+      "toolUsesExpected",
+      "byAgent",
+      "liveServerTools",
+      "shapeUnfenced",
+      "unattributed",
+      "unattributedExpected",
+      "reassigned",
+      "attributionUncertain"
+     ],
+     "type": "object"
+    },
+    "miss": {
+     "enum": [
+      "empty",
+      "error"
+     ],
+     "type": "string"
+    },
+    "poolId": {
+     "type": "string"
+    },
+    "sha256": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "poolId",
+    "sha256",
+    "label",
+    "miss",
+    "interposition",
+    "credentialSource",
+    "metrics",
+    "calls"
+   ],
+   "type": "object"
+  },
+  "skillActivity": {
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "dispatchCount": {
+      "type": "number"
+     },
+     "durationMs": {
+      "type": "number"
+     },
+     "invocationSeq": {
+      "type": "number"
+     },
+     "skillId": {
+      "type": "string"
+     },
+     "toolCallCount": {
+      "type": "number"
+     },
+     "toolCounts": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "type": "object"
+     }
+    },
+    "required": [
+     "skillId",
+     "invocationSeq",
+     "toolCounts",
+     "toolCallCount",
+     "dispatchCount"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "skillCommit": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "skillToolAvailable": {
+   "type": "boolean"
+  },
+  "skillsInvoked": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "skippedAssertions": {
+   "properties": {
+    "full": {
+     "type": "number"
+    },
+    "partial": {
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "slashInvokedSkills": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "staleness": {
+   "items": {
+    "properties": {
+     "class": {
+      "enum": [
+       "baseline",
+       "skill",
+       "shared-root",
+       "format",
+       "unverifiable-baseline",
+       "unverifiable-skill",
+       "resolved-tier",
+       "unverifiable-tier",
+       "prompt-assets",
+       "unverifiable-prompt-assets",
+       "fixture",
+       "unverifiable-fixture"
+      ],
+      "type": "string"
+     },
+     "message": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "class",
+     "message"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "stalledOnQuestion": {
+   "type": "boolean"
+  },
+  "stderrLogPath": {
+   "type": "string"
+  },
+  "subagents": {
+   "items": {
+    "properties": {
+     "attributedSkillId": {
+      "type": "string"
+     },
+     "declaredTools": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "description": {
+      "type": "string"
+     },
+     "dispatchAgentType": {
+      "type": "string"
+     },
+     "dispatchModel": {
+      "type": "string"
+     },
+     "dispatchTypeOmitted": {
+      "type": "boolean"
+     },
+     "output": {
+      "type": "string"
+     },
+     "outputTruncated": {
+      "type": "boolean"
+     },
+     "parentToolUseId": {
+      "type": "string"
+     },
+     "prompt": {
+      "type": "string"
+     },
+     "reasoning": {
+      "items": {
+       "properties": {
+        "kind": {
+         "enum": [
+          "thinking",
+          "text"
+         ],
+         "type": "string"
+        },
+        "redacted": {
+         "type": "boolean"
+        },
+        "text": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "kind",
+        "text"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "reasoningElided": {
+      "type": "number"
+     },
+     "referencesAccessed": {
+      "items": {
+       "additionalProperties": false,
+       "properties": {
+        "path": {
+         "type": "string"
+        },
+        "via": {
+         "items": {
+          "enum": [
+           "read",
+           "grep",
+           "bash"
+          ],
+          "type": "string"
+         },
+         "type": "array"
+        }
+       },
+       "required": [
+        "path",
+        "via"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "referencesRead": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array"
+     },
+     "resolvedAgentType": {
+      "type": "string"
+     },
+     "resolvedModel": {
+      "type": "string"
+     },
+     "toolUseId": {
+      "type": "string"
+     },
+     "toolsUsed": {
+      "items": {
+       "properties": {
+        "count": {
+         "type": "number"
+        },
+        "name": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "name",
+        "count"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "webSearches": {
+      "items": {
+       "properties": {
+        "query": {
+         "type": "string"
+        },
+        "resultText": {
+         "type": "string"
+        },
+        "resultTruncated": {
+         "type": "boolean"
+        },
+        "viaAgentId": {
+         "type": "string"
+        },
+        "viaSpawnDepth": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "query",
+        "resultText"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "webSearchesElided": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "toolUseId",
+     "dispatchAgentType",
+     "declaredTools",
+     "toolsUsed"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "tasks": {
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "activeForm": {
+      "type": "string"
+     },
+     "description": {
+      "type": "string"
+     },
+     "id": {
+      "type": "string"
+     },
+     "status": {
+      "type": "string"
+     },
+     "subject": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "subject",
+     "status"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "thinking": {
+   "items": {
+    "properties": {
+     "redacted": {
+      "type": "boolean"
+     },
+     "text": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "text"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "thinkingElided": {
+   "type": "number"
+  },
+  "timeout": {
+   "additionalProperties": false,
+   "properties": {
+    "ms": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "source": {
+     "enum": [
+      "flag",
+      "scenario",
+      "runner"
+     ]
+    }
+   },
+   "required": [
+    "ms",
+    "source"
+   ],
+   "type": "object"
+  },
+  "toolCalls": {
+   "items": {
+    "properties": {
+     "denied": {
+      "type": "boolean"
+     },
+     "input": {
+      "additionalProperties": {
+       "properties": {
+        "text": {
+         "type": "string"
+        },
+        "truncated": {
+         "type": "boolean"
+        }
+       },
+       "required": [
+        "text"
+       ],
+       "type": "object"
+      },
+      "type": "object"
+     },
+     "name": {
+      "type": "string"
+     },
+     "origin": {
+      "enum": [
+       "main",
+       "subagent",
+       "unknown"
+      ]
+     },
+     "parentToolUseId": {
+      "type": "string"
+     },
+     "toolUseId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "name",
+     "input",
+     "origin"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "toolCounts": {
+   "additionalProperties": {
+    "type": "number"
+   },
+   "type": "object"
+  },
+  "toolDurations": {
+   "additionalProperties": {
+    "additionalProperties": false,
+    "properties": {
+     "calls": {
+      "type": "number"
+     },
+     "maxMs": {
+      "type": "number"
+     },
+     "totalMs": {
+      "type": "number"
+     },
+     "unpaired": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "calls",
+     "totalMs",
+     "maxMs"
+    ],
+    "type": "object"
+   },
+   "type": "object"
+  },
+  "toolDurationsBasis": {
+   "enum": [
+    "wall_gap"
+   ],
+   "type": "string"
+  },
+  "toolErrors": {
+   "additionalProperties": {
+    "additionalProperties": false,
+    "properties": {
+     "calls": {
+      "type": "number"
+     },
+     "errors": {
+      "type": "number"
+     }
+    },
+    "required": [
+     "calls",
+     "errors"
+    ],
+    "type": "object"
+   },
+   "type": "object"
+  },
+  "toolResults": {
+   "items": {
+    "properties": {
+     "assertText": {
+      "type": "string"
+     },
+     "assertTextTruncated": {
+      "type": "boolean"
+     },
+     "isError": {
+      "type": "boolean"
+     },
+     "text": {
+      "type": "string"
+     },
+     "toolUseId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "isError",
+     "text"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "turn": {
+   "minimum": 1,
+   "type": "integer"
+  },
+  "turnCap": {
+   "additionalProperties": false,
+   "properties": {
+    "maxTurns": {
+     "minimum": 1,
+     "type": "integer"
+    },
+    "source": {
+     "const": "session"
+    }
+   },
+   "required": [
+    "maxTurns",
+    "source"
+   ],
+   "type": "object"
+  },
+  "unansweredGate": {
+   "type": "object"
+  },
+  "usage": {
+   "properties": {
+    "turns": {
+     "type": "number"
+    }
+   },
+   "type": "object"
+  },
+  "userVisibleRoots": {
+   "items": {
+    "type": "string"
+   },
+   "type": "array"
+  },
+  "verdict": {
+   "properties": {
+    "exitCode": {
+     "enum": [
+      0,
+      1
+     ],
+     "type": "integer"
+    },
+    "failures": {
+     "items": {
+      "properties": {
+       "assertion": {
+        "type": "string"
+       },
+       "kind": {
+        "enum": [
+         "assertion",
+         "guard",
+         "staleness",
+         "cassette-format",
+         "coverage"
+        ],
+        "type": "string"
+       },
+       "message": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "message",
+       "kind"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "guards": {
+     "items": {
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "status": {
+        "enum": [
+         "ok",
+         "fired",
+         "na",
+         "unverified"
+        ],
+        "type": "string"
+       }
+      },
+      "required": [
+       "name",
+       "status"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    },
+    "pass": {
+     "type": "boolean"
+    },
+    "signals": {
+     "items": {
+      "properties": {
+       "code": {
+        "enum": [
+         "assertion",
+         "result_error",
+         "transport_error",
+         "usage_limit",
+         "permissive_auto_allow",
+         "outputs_delete",
+         "mount_delete",
+         "device_delete_bypassed",
+         "device_delete_unconfirmed",
+         "device_audit_unreadable",
+         "host_path_leak",
+         "non_deterministic",
+         "model_fallback",
+         "missing_capability",
+         "infra_error",
+         "exec_infra_error",
+         "stalled",
+         "prompt_asset_missing",
+         "scan_unavailable",
+         "ended_with_question",
+         "undelivered_deliverables",
+         "delivery_unobservable",
+         "outputs_delete_unconfirmed",
+         "outputs_diff_unavailable",
+         "partly_scripted_gate",
+         "parked_at_question",
+         "search_corpus_refused",
+         "search_corpus_attribution_uncertain",
+         "search_corpus_semantic_judge"
+        ],
+        "type": "string"
+       },
+       "message": {
+        "type": "string"
+       },
+       "severity": {
+        "enum": [
+         "fail",
+         "warn"
+        ],
+        "type": "string"
+       }
+      },
+      "required": [
+       "code",
+       "severity",
+       "message"
+      ],
+      "type": "object"
+     },
+     "type": "array"
+    }
+   },
+   "required": [
+    "pass",
+    "exitCode",
+    "signals",
+    "guards",
+    "failures"
+   ],
+   "type": "object"
+  },
+  "webSearches": {
+   "items": {
+    "additionalProperties": false,
+    "properties": {
+     "query": {
+      "type": "string"
+     },
+     "results": {
+      "items": {
+       "additionalProperties": false,
+       "properties": {
+        "title": {
+         "type": "string"
+        },
+        "url": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "title",
+        "url"
+       ],
+       "type": "object"
+      },
+      "type": "array"
+     },
+     "toolUseId": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "query",
+     "results"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "workDir": {
+   "type": "string"
+  },
+  "workspaceFiles": {
+   "items": {
+    "properties": {
+     "bytes": {
+      "type": "number"
+     },
+     "class": {
+      "enum": [
+       "output",
+       "mount",
+       "input",
+       "scratchpad"
+      ],
+      "type": "string"
+     },
+     "hashError": {
+      "type": "string"
+     },
+     "path": {
+      "type": "string"
+     },
+     "sha256": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "path",
+     "bytes",
+     "class"
+    ],
+    "type": "object"
+   },
+   "type": "array"
+  },
+  "workspaceFixture": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "scenario",
+  "fidelity",
+  "baseline",
+  "result",
+  "decisions",
+  "egress",
+  "assertions",
+  "outDir"
+ ],
+ "title": "RunResult",
+ "type": "object"
+}
