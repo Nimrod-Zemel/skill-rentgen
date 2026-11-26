@@ -50,6 +50,20 @@ Inside Claude, ask: "check this skill before I install it" and give the folder o
 
 Every scan also writes the report as a single HTML page that opens in any browser. Builders get `declare`, a GitHub Action, a pre-commit hook and SARIF output. See [docs/recipes.md](docs/recipes.md).
 
+## Where it runs
+
+On your own computer, and in a cloud session where the machine starts empty every time.
+
+| | Your own computer | A cloud session |
+| --- | --- | --- |
+| A GitHub address | Downloaded from GitHub | Where the download host is closed, the agent brings the repository in with the session's own tool for repositories, and the scan reads that copy (`--copy`) |
+| The trial run | Docker Desktop, OrbStack or Podman, running | Docker is usually installed and not running: `--start-engine` starts it for one run and stops it. No image is downloaded: the container gets the machine's own program folders, read-only |
+| `add` | Installs into `~/.claude/skills` | Writes exactly the scanned files as one `.skill` or `.plugin` file, for you to install |
+| The registry | `~/.skill-rentgen` | Also written as one small file to keep between sessions. `registry import` loads it |
+| What is installed | Skill folders and Claude Code plugins | Also the skills and plugins your account brings into the session |
+
+The cloud column was run on 26 November 2026 in a Claude cloud session, with this repository's own test skills and with public repositories that were already on its disk. Keeping the registry file between sessions is a step the agent does by following the skill's instructions; that step has not been watched from end to end.
+
 ## The four things it does
 
 | What | How |
@@ -78,7 +92,8 @@ TRIAL  DO NOT INSTALL  3 started, 11 seen
 
 `trial` copies the skill into a container that has no network, a read-only system, no extra privileges, no path on your disk it can write to, and a home folder made for the run. In that home it plants 27 decoy files where real keys, tokens, browser logins and agent settings live. Then it starts each hook, server command and install script the skill declares, and each script its instructions point to (with `--help` only), and writes down what they did: which decoys they read, where a decoy's content went, which servers they tried, what they changed, what they tried to install.
 
-- It needs Docker or Podman. Without one it says "not checked" and starts nothing. It never falls back to running on your computer.
+- It needs Docker or Podman. With neither installed it says "not checked" and starts nothing. With Docker installed and not running it says so; `--start-engine` lets the tool start Docker's service for one run and stop it afterwards (Linux, as root). It never falls back to running on your computer.
+- The sandbox image is `python:3.12-slim`. On Linux, when that image is not on the machine and cannot be fetched, the container gets the machine's own program folders instead (`/usr` and the like), each one read-only, and no folder that holds anything personal. The report says which was used.
 - The verdict of a trial comes from ten rules of its own, three of them red lines.
 - A trial is evidence of what was seen in one run. It is not evidence that a skill is safe, and every report says what the run does not show.
 
@@ -116,7 +131,7 @@ The trial's rules have not yet been run against the known-good corpus. That run 
 - `add` installs a skill only after it passed, and only the bytes that were scanned.
 - The part that starts by itself, the session hook, is a small script that can only read. It cannot scan, install, block or use the network, and a test checks that.
 - Archives are unpacked entry by entry into a temporary folder. No link from an archive is ever created on disk.
-- Network use: `codeload.github.com` when you give a GitHub address, `api.github.com` when you ask about upstream updates. Nothing else. The container engine downloads the sandbox image the first time. See [skill-capabilities.json](skill-rentgen/skills/skill-rentgen/skill-capabilities.json).
+- Network use: `codeload.github.com` when you give a GitHub address, `api.github.com` when you ask about upstream updates. Nothing else. With `--copy` a GitHub address is scanned from a copy on disk and nothing is downloaded. The container engine downloads the sandbox image the first time, if it can. See [skill-capabilities.json](skill-rentgen/skills/skill-rentgen/skill-capabilities.json).
 - It passes its own check with two notes, both for commands that write into a `.claude` folder when you ask them to: `add` and `block`. CI fails if anything else appears.
 
 Threat model and limits: [SECURITY.md](SECURITY.md).

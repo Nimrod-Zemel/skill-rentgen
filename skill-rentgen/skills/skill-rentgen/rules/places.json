@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "note": "Where agents keep skills and plugins, and how to tell a machine whose disk does not last. Data only: the code reads this list and nothing here is run.",
+  "skill_folders": [
+    {"where": "user", "path": "~/.claude/skills"},
+    {"where": "project", "path": "./.claude/skills"},
+    {"where": "user", "path": "~/.agents/skills"},
+    {"where": "project", "path": "./.agents/skills"},
+    {"where": "account", "path": "~/.claude/skills/synced/*"}
+  ],
+  "plugin_folders": [
+    {"where": "account", "path": "~/.claude/plugins/synced/*", "index": "manifest.json"}
+  ],
+  "containers": [
+    "synced"
+  ],
+  "short_lived_env": [
+    "SKILL_RENTGEN_SHORT_LIVED",
+    "CLAUDE_CODE_REMOTE",
+    "GITHUB_ACTIONS"
+  ]
+}

@@ -35,6 +35,8 @@ The two open conditions are the ones a build cannot close alone. Until they are 
 | `check --upstream`, including a source address that now leads elsewhere | Built. The moved-address case is tested with a stand-in for GitHub, not against GitHub |
 | `block` and `unblock`: a deny rule for one skill in the project's local settings, written only with `--yes` | Built. It does not stop a plugin's hooks or servers, and it does not undo what already ran in the session |
 | The email alert | Built as a draft file. The tool sends nothing; a person or an agent with a mail connector sends it |
+| A machine that starts empty: `add` hands back a file to install, the registry travels as one small file, and the inventory sees what the account brought into the session | Built. Run in one Claude cloud session. **Keeping the registry file between sessions is done by the agent from the skill's instructions and has not been watched end to end** |
+| A GitHub address read from a copy on disk (`--copy`), for machines that cannot reach GitHub's download host | Built |
 
 Not built:
 
@@ -48,6 +50,7 @@ Gate before calling part B finished: ten skills approved on three machines for t
 
 | What | State |
 | --- | --- |
+| The trial run where Docker is installed and not running (`--start-engine`), and with no image download (the machine's own programs, read-only, Linux only) | Built. Tested on a real container engine |
 | The trial run in a container | Built. Tested with this repository's own test skills, on a real container engine in CI and on a stand-in elsewhere. **Not yet calibrated on the known-good corpus**: that run starts other people's code and is done only in a real container, by `.github/workflows/calibration.yml` |
 | The agent trial pack for cowork-harness, and the reader of its result | Built. The scenario and session are checked against the harness's published schemas. **Not yet run end to end**: that needs the harness, Docker, a Claude login, and for the virtual-machine tier a Mac with Apple silicon |
 | `inventory --doctor`, through claude-plugin-doctor | Built against its documented output. **Not yet run against the real program**, which works on macOS only |

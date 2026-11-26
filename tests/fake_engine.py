@@ -57,6 +57,13 @@ def usable():
 def main(argv):
     if not argv or argv[0] in ("info", "kill", "rm"):
         return 0
+    if argv[0] in ("image", "pull", "import"):
+        # The stand-in has no images. It says the default one is there, or,
+        # for the test of a missing image, that none can be had.
+        if os.environ.get("FAKE_ENGINE_NO_IMAGE"):
+            sys.stderr.write("pull access denied\n")
+            return 1
+        return 0
     if argv[0] != "run":
         return 64
     args = argv[1:]

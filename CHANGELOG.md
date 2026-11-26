@@ -25,6 +25,16 @@ Install, approve, monitor:
 - The session hook is a separate small script that can only read.
 - `inventory`, with `--doctor` to include the plugin copies that claude-plugin-doctor finds.
 
+A machine that starts empty every time (a cloud session):
+
+- `scan`, `add` and `trial` take `--copy FOLDER` with a GitHub address: the repository is read from a copy already on disk and nothing is downloaded. The copy's origin and version are checked from its `.git` text files; git is never started.
+- `trial --start-engine`: when Docker is installed and its service is not running, start it for one run and stop it afterwards. Linux, as root.
+- A trial needs no image download on Linux: when the default image cannot be had, the container gets the machine's own program folders, each one read-only.
+- `add` writes exactly the scanned files as one `.skill` or `.plugin` file instead of installing, and `add --as-file` does that anywhere.
+- `registry export`, `registry import` and `registry where`: the registry as one small file to keep between sessions. `SKILL_RENTGEN_HOME` moves the registry folder.
+- `inventory`, `baseline` and `check` also see the skills and plugins that an account brings into a cloud session.
+- `check <name>` with a name that matches nothing is an error, not a quiet "nothing changed".
+
 For builders:
 
 - `declare`, a GitHub Action, a pre-commit hook.

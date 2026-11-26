@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SkillRentgen registry, as one file to carry",
+  "description": "Written by `registry export` and read by `registry import`. Each record keeps one hash for all its files instead of the file list. It holds names, paths and hashes, and no file of any skill.",
+  "type": "object",
+  "required": ["kind", "schema_version", "exported_at", "tool_version", "body", "sha256"],
+  "properties": {
+    "kind": {"type": "string", "enum": ["skill-rentgen-registry"]},
+    "schema_version": {"type": "string", "enum": ["1.0"]},
+    "exported_at": {"type": "string"},
+    "tool_version": {"type": "string"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "body": {
+      "type": "object",
+      "required": ["skills", "settings", "agent_settings", "noted"],
+      "properties": {
+        "skills": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["name", "path", "adopted_at", "verdict", "hash_algo", "tree", "file_count"],
+            "properties": {
+              "name": {"type": "string"},
+              "path": {"type": "string"},
+              "adopted_at": {"type": "string"},
+              "how": {"type": "string", "enum": ["adopt", "add", "baseline"]},
+              "verdict": {"type": "string", "enum": ["approve", "approve_with_notes", "caution"]},
+              "hash_algo": {"type": "string", "enum": ["sha256"]},
+              "tree": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "file_count": {"type": "integer"},
+              "accepted": {"type": "array", "items": {"type": "string"}},
+              "reasons": {"type": "array", "items": {"type": "string"}},
+              "upstream": {"type": "object"},
+              "plugin": {"type": "object"}
+            }
+          }
+        },
+        "settings": {"type": "object"},
+        "agent_settings": {"type": "object"},
+        "noted": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

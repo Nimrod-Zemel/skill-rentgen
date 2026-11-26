@@ -33,7 +33,7 @@ jobs:
         run: python -m unittest discover -s tests -p "test_*.py" -v
       - name: The trial tests really ran in a container
         if: runner.os == 'Linux'
-        run: python -m unittest discover -s tests -p "test_trial.py" -v 2>&1 | tee trial.log && grep -q "test_isolation_holds_and_the_thief_is_caught.*ok" trial.log
+        run: python -m unittest discover -s tests -p "test_trial.py" -v 2>&1 | tee trial.log && grep -q "test_isolation_holds_and_the_thief_is_caught.*ok" trial.log && grep -q "test_the_same_fences_hold_with_no_image_downloaded.*ok" trial.log
       - name: The tool passes its own check
         run: python skill-rentgen/skills/skill-rentgen/scripts/skill_rentgen.py scan skill-rentgen --lang en --out "${{ runner.temp }}/self"
       - name: No bytecode is committed

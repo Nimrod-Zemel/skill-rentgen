@@ -37,6 +37,17 @@ def diff_folder(record, path, full=False):
     if stats is None:
         return None
     files, stored = record.get("files", {}), record.get("stats") or {}
+    if not files and record.get("tree"):
+        # A record that was carried in holds one hash for all its files.
+        now_files = {}
+        try:
+            for rel in stats:
+                now_files[rel] = sha256_file(os.path.join(path, rel))
+        except OSError:
+            return {"added": [], "removed": [], "changed": ["?"]}
+        if registry.tree_hash(now_files) != record["tree"]:
+            return {"added": [], "removed": [], "changed": ["?"]}
+        return {"added": [], "removed": [], "changed": [], "files": now_files, "stats": stats}
     added = sorted(set(stats) - set(files)) if len(files) < LIMITS["soft_files"] else []
     removed = sorted(set(files) - set(stats))
     changed = []
@@ -64,6 +75,7 @@ def compare(home, name="", hook=False, upstream=None):
     installs = inventory.plugin_installs()
     rules_now = rules_version()
     changes = []
+    refilled = False
     for key, record in sorted(data["skills"].items()):
         if name and name not in (record.get("name"), key):
             continue
@@ -85,12 +97,20 @@ def compare(home, name="", hook=False, upstream=None):
         elif item["status"] != "missing":
             full = not hook and registry.full_check_due(state, key)
             found = diff_folder(record, item["path"], full or item["status"] == "updated")
+            if not record.get("files") and record.get("tree"):
+                item["carried"] = True
             if found is None:
                 item["changed"] = ["?"]
             else:
+                fresh = found.pop("files", None), found.pop("stats", None)
                 item.update(found)
                 if full:
                     state["full_check"][key] = registry.now()
+                if fresh[0] is not None and not hook:
+                    # The files matched the carried hash: keep their list from now on.
+                    record["files"], record["stats"] = fresh
+                    record["path"] = item["path"]
+                    refilled = True
             if (item["added"] or item["removed"] or item["changed"]) and item["status"] == "same":
                 item["status"] = "tampered" if plugin.get("key") else "changed"
         if not hook and record.get("rules_version") and record["rules_version"] != rules_now:
@@ -117,6 +137,8 @@ def compare(home, name="", hook=False, upstream=None):
     stored = (data.get("agent_settings") or {}).get("files")
     settings = [] if (name or stored is None) else registry.settings_diff(
         stored, registry.settings_fingerprint(registry.settings_files()))
+    if refilled:
+        registry.save(home, data)
     if hook:
         fresh = [entry for entry in unknown if entry["path"] not in state["noted"]]
         if fresh:
@@ -130,6 +152,11 @@ def compare(home, name="", hook=False, upstream=None):
 
 def session_line(home, lang=None):
     """The one line for the start of a session. Empty when all is quiet."""
-    lang = lang or registry.load(home)["settings"].get("lang") or "he"
+    known = registry.load(home)
+    if not known["skills"] and not known["agent_settings"] and registry.short_lived():
+        # A machine that starts empty every time has nothing to compare with.
+        # Saying "never checked" at the start of every session would be noise.
+        return ""
+    lang = lang or known["settings"].get("lang") or "he"
     changes, extras, _ = compare(home, hook=True)
     return registry.hook_line(changes, lang, len(extras["unknown"]), extras["settings"])

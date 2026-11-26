@@ -9,7 +9,8 @@ one run. It is not evidence that a skill is safe.
 
 Rules that tests check:
 1. Nothing of the skill ever runs on this machine. If no container engine
-   answers, the trial reports "not checked" and stops.
+   answers, the trial reports "not checked" and stops. The tool starts an
+   engine's service only when asked to, and stops what it started.
 2. The container has no network, no writable path on this disk, a
    read-only system, no extra privileges, and limits on time, memory and
    processes.
@@ -21,6 +22,8 @@ Rules that tests check:
 """
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import os
 import re
@@ -28,14 +31,24 @@ import secrets
 import shlex
 import shutil
 import subprocess
+import sys
+import tarfile
 import tempfile
+import time
 import uuid
 
 from common import (SEV_RANK, SKILL_DIR, clean_snippet, finding, is_test_path, load_json,
                     path_matches, read_text, rule_file)
 
 DEFAULT_IMAGE = "python:3.12-slim"
+HOST_IMAGE = "host"
 ENGINES = ("docker", "podman")
+DAEMONS = {"docker": "dockerd"}
+# The folders of a Linux machine that hold its programs and nothing personal.
+HOST_TREES = ("/usr", "/bin", "/sbin", "/lib", "/lib64", "/lib32", "/libx32")
+HOST_FILES = ("/etc/alternatives", "/etc/ld.so.cache", "/etc/ld.so.conf", "/etc/ld.so.conf.d")
+HOST_EXTRA = "/opt/"
+HOST_PATH = ("/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin")
 BASE = "/sandbox"
 HERE = os.path.dirname(os.path.abspath(__file__))
 SANDBOX_FILES = ("runner.py", "audit_hook.py", "node_hook.js", "shim.sh")
@@ -67,28 +80,217 @@ class NotRun(Exception):
 
 # ------------------------------------------------------------------ engine
 
-def find_engine(prefer=None, which=shutil.which, call=subprocess.call):
-    """The first container engine that answers. None when there is none."""
+def engine_state(prefer=None, which=shutil.which, call=subprocess.call):
+    """("ready" | "stopped" | "none", name, path). "stopped" means an engine
+    is installed and its service did not answer."""
     names = [prefer] if prefer else list(ENGINES)
+    installed = None
     for name in names:
         if name not in ENGINES:
             continue
         path = which(name)
         if not path:
             continue
+        installed = installed or (name, path)
         try:
             code = call([path, "info"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL, timeout=25)
         except (OSError, subprocess.SubprocessError):
             continue
         if code == 0:
-            return name, path
-    return None
+            return "ready", name, path
+    if installed:
+        return ("stopped",) + installed
+    return "none", "", ""
 
 
-def container_argv(engine_path, name, image, skill_dir, tool_dir):
-    """The full command line. Every isolation setting is spelled out here."""
-    return [engine_path, "run", "--rm", "-i", "--name", name,
+def find_engine(prefer=None, which=shutil.which, call=subprocess.call):
+    """The first container engine that answers. None when there is none."""
+    state, name, path = engine_state(prefer, which, call)
+    return (name, path) if state == "ready" else None
+
+
+def start_daemon(name, path, which=shutil.which, wait=45):
+    """Start the engine's own service for the length of one trial.
+
+    Only where that is the normal way to have one: Linux, as root, with the
+    service program installed and no desktop app to open instead. Returns the
+    process, which the caller stops again. Raises NotRun otherwise."""
+    service = which(DAEMONS.get(name, "")) if DAEMONS.get(name) else None
+    if not (sys.platform.startswith("linux") and service and hasattr(os, "geteuid")
+            and os.geteuid() == 0):
+        raise NotRun("engine_stopped", name)
+    log = tempfile.NamedTemporaryFile(prefix="skill-rentgen-engine-", suffix=".log", delete=False)
+    try:
+        proc = subprocess.Popen([service], stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                                start_new_session=True)
+    except OSError as error:
+        log.close()
+        os.unlink(log.name)
+        raise NotRun("engine_failed", str(error))
+    proc.log_path = log.name
+    log.close()
+    deadline = time.time() + wait
+    while time.time() < deadline and proc.poll() is None:
+        try:
+            if subprocess.call([path, "info"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, timeout=20) == 0:
+                return proc
+        except (OSError, subprocess.SubprocessError):
+            pass
+        time.sleep(0.5)
+    detail = ""
+    try:
+        with open(proc.log_path, "rb") as handle:
+            lines = handle.read()[-4000:].decode("utf-8", "replace").strip().split("\n")
+            detail = lines[-1] if lines else ""
+    except OSError:
+        pass
+    stop_daemon(proc)
+    raise NotRun("engine_failed", detail or "the engine's service did not come up")
+
+
+def stop_daemon(proc):
+    """Stop a service that start_daemon started, and remove its log."""
+    if proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=30)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+    try:
+        os.unlink(proc.log_path)
+    except (OSError, AttributeError):
+        pass
+
+
+# ------------------------------------------------------------------- image
+
+def _engine_ok(engine_path, args, wait=40, data=None):
+    try:
+        proc = subprocess.run([engine_path] + args, input=data, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, timeout=wait,
+                              stdin=None if data is not None else subprocess.DEVNULL)
+    except (OSError, subprocess.SubprocessError) as error:
+        return False, str(error)
+    text = proc.stderr.decode("utf-8", "replace").strip().split("\n")
+    return proc.returncode == 0, text[-1] if text else ""
+
+
+def host_layout(executable=None, which=shutil.which):
+    """How to give the sandbox this machine's own programs, read-only.
+
+    WHY: the default image has to be downloaded once, and some machines and
+    most cloud sessions cannot reach the place it comes from. A Linux machine
+    already holds everything the sandbox needs: Python, a shell, perhaps Node.
+    Only the system's program folders are shared, and only for reading. No
+    home folder, no /etc beyond the linker's own files, no /var.
+    Raises NotRun when this machine cannot do it."""
+    if not sys.platform.startswith("linux"):
+        raise NotRun("image_missing")
+    trees, links, extra = [], {}, []
+    for tree in HOST_TREES:
+        if os.path.islink(tree):
+            links[tree.lstrip("/")] = os.readlink(tree)
+        elif os.path.isdir(tree):
+            trees.append(tree)
+
+    def shared(program):
+        if any(program.startswith(tree + "/") for tree in trees):
+            return True
+        if program.startswith(HOST_EXTRA):
+            parts = program.split("/")
+            prefix = "/".join(parts[:3])
+            if len(parts) > 3 and os.path.isdir(prefix) and not os.path.islink(prefix):
+                if prefix not in extra:
+                    extra.append(prefix)
+                return True
+        return False
+
+    python = os.path.realpath(executable or sys.executable)
+    if not shared(python):
+        raise NotRun("image_missing", "this Python is not in a system folder: %s" % python)
+    path = list(HOST_PATH)
+    for tool in ("bash", "node"):
+        found = which(tool)
+        real = os.path.realpath(found) if found else ""
+        if real and shared(real) and os.path.dirname(real) not in path:
+            path.append(os.path.dirname(real))
+    if os.path.dirname(python) not in path:
+        path.append(os.path.dirname(python))
+    # Where this machine's programs look for their libraries, kept only for
+    # folders that are shared anyway.
+    libs = [item for item in os.environ.get("LD_LIBRARY_PATH", "").split(":")
+            if item.startswith("/") and shared(os.path.join(os.path.realpath(item), "x"))]
+    binds = [(item, item) for item in trees + extra]
+    binds += [(item, item) for item in HOST_FILES if os.path.exists(item)]
+    return {"python": python, "binds": binds, "path": ":".join(path), "links": links,
+            "libs": ":".join(libs)}
+
+
+def _base_tar(links):
+    """An empty root for the sandbox: mount points and the same top-level
+    links this machine has. A few hundred bytes, the same on every run."""
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w", format=tarfile.USTAR_FORMAT) as tar:
+        names = {"etc": 0o755, "usr": 0o755, "proc": 0o755, "dev": 0o755, "sys": 0o755,
+                 "sr": 0o755, "opt": 0o755, BASE.strip("/"): 0o755, "tmp": 0o1777}
+        for tree in HOST_TREES:
+            if tree.lstrip("/") not in links:
+                names.setdefault(tree.lstrip("/"), 0o755)
+        for name in sorted(names):
+            member = tarfile.TarInfo(name)
+            member.type, member.mode, member.mtime = tarfile.DIRTYPE, names[name], 0
+            tar.addfile(member)
+        for name in sorted(links):
+            member = tarfile.TarInfo(name)
+            member.type, member.linkname, member.mode, member.mtime = (
+                tarfile.SYMTYPE, links[name], 0o777, 0)
+            tar.addfile(member)
+    return buffer.getvalue()
+
+
+def host_image(engine_path, layout):
+    """The name of the empty local image, made once and then reused."""
+    data = _base_tar(layout["links"])
+    tag = "skill-rentgen-host:" + hashlib.sha256(data).hexdigest()[:12]
+    if _engine_ok(engine_path, ["image", "inspect", tag])[0]:
+        return tag
+    ok, detail = _engine_ok(engine_path, ["import", "-", tag], 120, data)
+    if not ok:
+        raise NotRun("image_missing", detail)
+    return tag
+
+
+def pick_image(engine_path, image=None):
+    """(image name, host layout or None).
+
+    A named image is used as given. Without one: the default image if this
+    machine has it or can fetch it, and otherwise, on Linux, this machine's
+    own programs."""
+    if image == HOST_IMAGE:
+        layout = host_layout()
+        return host_image(engine_path, layout), layout
+    if image:
+        return image, None
+    if _engine_ok(engine_path, ["image", "inspect", DEFAULT_IMAGE])[0]:
+        return DEFAULT_IMAGE, None
+    pulled, detail = _engine_ok(engine_path, ["pull", "-q", DEFAULT_IMAGE], 240)
+    if pulled:
+        return DEFAULT_IMAGE, None
+    try:
+        layout = host_layout()
+        return host_image(engine_path, layout), layout
+    except NotRun as stop:
+        raise NotRun("image_missing", stop.detail or detail)
+
+
+def container_argv(engine_path, name, image, skill_dir, tool_dir, host=None):
+    """The full command line. Every isolation setting is spelled out here.
+    `host`, when given, is a host_layout(): the sandbox then gets this
+    machine's program folders, each one read-only."""
+    argv = [engine_path, "run", "--rm", "-i", "--name", name,
             "--network", "none",
             "--read-only",
             "--cap-drop", "ALL",
@@ -100,8 +302,17 @@ def container_argv(engine_path, name, image, skill_dir, tool_dir):
             "-v", skill_dir + ":/sr/skill:ro,z",
             "-v", tool_dir + ":/sr/tool:ro,z",
             "-v", os.path.join(tool_dir, "passwd") + ":/etc/passwd:ro,z",
-            "-v", os.path.join(tool_dir, "group") + ":/etc/group:ro,z",
-            "--entrypoint", "python3", image, "-I", "-B", "/sr/tool/runner.py"]
+            "-v", os.path.join(tool_dir, "group") + ":/etc/group:ro,z"]
+    entry = "python3"
+    if host:
+        for source, target in host["binds"]:
+            # No relabel option here: these are the system's own folders.
+            argv += ["-v", "%s:%s:ro" % (source, target)]
+        argv += ["-e", "PATH=" + host["path"]]
+        if host.get("libs"):
+            argv += ["-e", "LD_LIBRARY_PATH=" + host["libs"]]
+        entry = host["python"]
+    return argv + ["--entrypoint", entry, image, "-I", "-B", "/sr/tool/runner.py"]
 
 
 def _fsize_limit():
@@ -122,10 +333,10 @@ def _fsize_limit():
     return apply
 
 
-def run_container(engine, image, skill_dir, tool_dir, job, wait, scratch):
+def run_container(engine, image, skill_dir, tool_dir, job, wait, scratch, host=None):
     """Start the container, hand it the job, return the runner's report."""
     name = "skill-rentgen-trial-" + uuid.uuid4().hex[:12]
-    argv = container_argv(engine[1], name, image, skill_dir, tool_dir)
+    argv = container_argv(engine[1], name, image, skill_dir, tool_dir, host)
     out_path, err_path = os.path.join(scratch, "stdout"), os.path.join(scratch, "stderr")
     timed_out = False
     with open(out_path, "wb") as out, open(err_path, "wb") as err:
@@ -593,7 +804,13 @@ def render(trial, lang):
                 tool=clean_snippet(item.get("snippet"), 30), sec=trial["timeout"]),
                 _code(command.get("shell", ""), 100)))
     out += ["", "## %s" % text["where"], ""]
-    out.append("- " + text["w_engine"].format(engine=trial["engine"], image=_code(trial["image"], 80)))
+    if trial["image"] == HOST_IMAGE:
+        out.append("- " + text["w_engine_host"].format(engine=trial["engine"]))
+    else:
+        out.append("- " + text["w_engine"].format(engine=trial["engine"],
+                                                  image=_code(trial["image"], 80)))
+    if trial.get("engine_started"):
+        out.append("- " + text["w_started"].format(engine=trial["engine"]))
     for key in ("w_network", "w_files", "w_limits"):
         out.append("- " + text[key])
     out.append("- " + text["w_decoys"].format(n=trial["decoys"]))
@@ -624,21 +841,35 @@ def not_run(name, reason, detail=""):
 
 
 def run(root, stage_dir, name, declared_hosts=(), extra=(), scripts=True, prefer=None,
-        image=None, timeout=15, engine=None):
-    """Carry out one trial. Always returns a trial record; never raises NotRun."""
+        image=None, timeout=15, engine=None, start=False):
+    """Carry out one trial. Always returns a trial record; never raises NotRun.
+
+    `start` allows the tool to start the engine's service when the engine
+    is installed and not running, and to stop it again afterwards."""
     trial = not_run(name, "")
     trial.update({"image": image or DEFAULT_IMAGE, "timeout": timeout})
     scratch = tempfile.mkdtemp(prefix="skill-rentgen-trial-")
+    service = None
     try:
         commands = collect_commands(root, stage_dir, extra, scripts)
         trial["commands"] = [{k: c[k] for k in ("id", "kind", "event", "file", "shell")}
                              for c in commands]
         if not commands:
             raise NotRun("nothing_to_run")
-        engine = engine or find_engine(prefer)
         if not engine:
-            raise NotRun("no_engine")
+            state, engine_name, engine_path = engine_state(prefer)
+            if state == "none":
+                raise NotRun("no_engine")
+            trial["engine"] = engine_name
+            if state == "stopped":
+                if not start:
+                    raise NotRun("engine_stopped", engine_name)
+                service = start_daemon(engine_name, engine_path)
+                trial["engine_started"] = True
+            engine = (engine_name, engine_path)
         trial["engine"] = engine[0]
+        image_name, host = pick_image(engine[1], image)
+        trial["image"] = HOST_IMAGE if host else image_name
         skill_dir, tool_dir = os.path.join(scratch, "skill"), os.path.join(scratch, "tool")
         os.chmod(scratch, 0o755)
         copy_tree(root, skill_dir)
@@ -660,7 +891,8 @@ def run(root, stage_dir, name, declared_hosts=(), extra=(), scripts=True, prefer
             os.chmod(target, 0o644)
         total = min(600, timeout * len(commands) + 20)
         job = build_job(commands, timeout, total)
-        raw = run_container(engine, trial["image"], skill_dir, tool_dir, job, total + 90, scratch)
+        raw = run_container(engine, image_name, skill_dir, tool_dir, job, total + 90, scratch,
+                            host)
         findings, notes = judge(raw, commands, declared_hosts)
         trial.update({"status": "ran", "findings": tidy(findings), "notes": notes,
                       "results": [{k: r.get(k) for k in ("id", "status", "exit", "seconds")}
@@ -673,5 +905,7 @@ def run(root, stage_dir, name, declared_hosts=(), extra=(), scripts=True, prefer
         trial.update(not_run(name, stop.reason, stop.detail), commands=trial["commands"],
                      image=trial["image"], engine=trial["engine"], timeout=timeout)
     finally:
+        if service is not None:
+            stop_daemon(service)
         shutil.rmtree(scratch, ignore_errors=True)
     return trial

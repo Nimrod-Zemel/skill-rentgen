@@ -72,6 +72,7 @@ sys.path.insert(0, HERE)
 
 import argparse  # noqa: E402
 import datetime  # noqa: E402
+import hashlib  # noqa: E402
 import json  # noqa: E402
 import re  # noqa: E402
 import shutil  # noqa: E402
@@ -104,6 +105,15 @@ ARCHIVE_EXT = (".zip", ".skill", ".tar.gz", ".tgz", ".tar")
 
 class ToolError(Exception):
     """Something went wrong in the tool or its inputs, not in the skill."""
+
+
+class Unreachable(ToolError):
+    """GitHub's download host cannot be reached from this machine."""
+
+
+COPY_HINT = ("If this environment has its own way to bring in repositories, fetch this one "
+             "with it and run again with --copy <that folder>. Or download the skill and "
+             "give the folder")
 
 
 class Refused(Exception):
@@ -146,11 +156,116 @@ def download(path, dest):
         if error.code == 404:
             raise ToolError("GitHub answered 404. Check the address, and that the repository is public")
         if error.code in (403, 407, 429):
-            raise ToolError("GitHub answered %d. A proxy, a firewall or a rate limit is in the way. "
-                            "Download the repository and scan the folder instead" % error.code)
+            raise Unreachable("GitHub's download host answered %d: a proxy, a firewall or a rate "
+                              "limit is in the way. %s" % (error.code, COPY_HINT))
         raise ToolError("GitHub answered %d" % error.code)
     except (urllib.error.URLError, OSError) as error:
-        raise ToolError("could not reach GitHub: %s" % clean_snippet(str(error), 100))
+        raise Unreachable("could not reach GitHub's download host: %s. %s"
+                          % (clean_snippet(str(error), 100), COPY_HINT))
+
+
+# ------------------------------------------------- a copy already on disk
+
+_SHA = re.compile(r"^[0-9a-f]{40}$")
+_GIT_URL = re.compile(r"^[ \t]*url[ \t]*=[ \t]*(\S+)[ \t]*$", re.M)
+_REPO_OF = re.compile(r"[:/]([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+?)(?:\.git)?/?$")
+
+
+def _small(path, limit=4 * 1024 * 1024):
+    try:
+        with open(path, "rb") as handle:
+            return handle.read(limit).decode("utf-8", "replace")
+    except OSError:
+        return ""
+
+
+def git_facts(top):
+    """What a copy of a repository says about itself. Read from the plain
+    text files of its .git folder; git itself is never started.
+    Returns {"remotes": [address], "branch": name, "commit": id, "refs": {name: [ids]}}."""
+    facts = {"remotes": [], "branch": None, "commit": None, "refs": {}}
+    git = os.path.join(top, ".git")
+    if os.path.isfile(git):          # a worktree or a submodule: one line, "gitdir: <path>"
+        pointer = re.match(r"gitdir:[ \t]*(.+)", _small(git, 4096))
+        if pointer:
+            git = os.path.normpath(os.path.join(top, pointer.group(1).strip()))
+    if not os.path.isdir(git):
+        return facts
+    facts["remotes"] = _GIT_URL.findall(_small(os.path.join(git, "config")))[:20]
+    last = None
+    for line in _small(os.path.join(git, "packed-refs")).splitlines():
+        parts = line.split()
+        if len(parts) == 2 and _SHA.match(parts[0]):
+            last = parts[1]
+            facts["refs"].setdefault(last, []).append(parts[0])
+        elif line.startswith("^") and last and _SHA.match(line[1:].strip()):
+            facts["refs"][last].append(line[1:].strip())      # what an annotated tag points at
+    head = _small(os.path.join(git, "HEAD"), 4096).strip()
+    if head.startswith("ref:"):
+        ref = head[4:].strip()
+        if re.match(r"^refs/[A-Za-z0-9_./-]+$", ref) and ".." not in ref:
+            if ref.startswith("refs/heads/"):
+                facts["branch"] = ref[len("refs/heads/"):]
+            loose = _small(os.path.join(git, ref), 4096).strip()
+            if _SHA.match(loose):
+                facts["commit"] = loose
+            elif facts["refs"].get(ref):
+                facts["commit"] = facts["refs"][ref][0]
+    elif _SHA.match(head):
+        facts["commit"] = head
+    return facts
+
+
+def _at_ref(top, facts, ref):
+    """True when the copy is at the version the address names."""
+    commit = facts["commit"] or ""
+    if ref == facts["branch"] or (len(ref) >= 7 and commit.startswith(ref.lower())):
+        return True
+    if not re.match(r"^[A-Za-z0-9_.-]+$", ref):
+        return False
+    for kind in ("tags", "heads", "remotes/origin"):
+        ref_name = "refs/%s/%s" % (kind, ref)
+        if commit in facts["refs"].get(ref_name, []):
+            return True
+        if _small(os.path.join(top, ".git", ref_name), 4096).strip() == commit:
+            return True
+    return False
+
+
+def _copy_root(target, match, copy, source):
+    """The folder to scan when the repository is already on this disk."""
+    owner, repo, ref, sub = match.groups()
+    top = os.path.realpath(copy)
+    if not os.path.isdir(top):
+        raise ToolError("--copy takes the folder that holds a copy of the repository")
+    facts = git_facts(top)
+    wanted = ("%s/%s" % (owner, repo)).lower()
+    names = []
+    for address in facts["remotes"]:
+        found = _REPO_OF.search(address)
+        names.append(("%s/%s" % found.groups()).lower() if found else "")
+    if facts["remotes"] and wanted not in names:
+        raise ToolError("that folder is a copy of %s, not of %s" % (
+            clean_snippet(names[0] or facts["remotes"][0], 80), wanted))
+    if ref and facts["commit"] and not _at_ref(top, facts, ref):
+        raise ToolError("the copy is at %s, and the address asks for %s. Fetch that version, "
+                        "or give the address without it" % (
+                            clean_snippet(facts["branch"] or facts["commit"][:12], 60),
+                            clean_snippet(ref, 60)))
+    source.update(kind="github", url=target, commit=facts["commit"], copy=True)
+    root, name = top, repo
+    if sub:
+        sub = _safe_rel(sub, 0)
+        root = os.path.realpath(os.path.join(top, sub))
+        if not (root + os.sep).startswith(top + os.sep):
+            raise ToolError("the folder %s is not in that repository" % clean_snippet(sub))
+        name = sub.rstrip("/").rsplit("/", 1)[-1]
+        if os.path.isfile(root):
+            root = os.path.dirname(root)
+            name = os.path.basename(root) if root != top else repo
+        if not os.path.isdir(root):
+            raise ToolError("the folder %s is not in that repository" % clean_snippet(sub))
+    return root, name
 
 
 def _safe_rel(name, strip):
@@ -249,13 +364,19 @@ def _single_folder(dest):
     return dest, ""
 
 
-def resolve(target, quarantine):
-    """Turn what the user gave into (root_folder, source_info, display_name)."""
+def resolve(target, quarantine, copy=None):
+    """Turn what the user gave into (root_folder, source_info, display_name).
+    `copy` is a folder that already holds the repository a GitHub address names."""
     source = {"kind": "local", "url": None, "commit": None}
     budget = _Budget()
     match = GITHUB.match(target)
+    if copy is not None and not match:
+        raise ToolError("--copy goes with a https://github.com/owner/repo address: the address "
+                        "says what to scan, the folder is where a copy of it already is")
     try:
-        if match:
+        if match and copy is not None:
+            root, name = _copy_root(target, match, copy, source)
+        elif match:
             owner, repo, ref, sub = match.groups()
             source.update(kind="github", url=target)
             archive = os.path.join(quarantine, "download.tar.gz")
@@ -402,7 +523,7 @@ def run_stage_inline(name, root, work):
         return record
 
 
-def scan(target, lang="he", out_dir=None, keep=False, runner=None, then=None):
+def scan(target, lang="he", out_dir=None, keep=False, runner=None, then=None, copy=None):
     """Scan one skill. Returns (summary, report_dict, out_dir).
 
     `then`, when given, is called with (root, work, summary, report, out_dir)
@@ -414,10 +535,11 @@ def scan(target, lang="he", out_dir=None, keep=False, runner=None, then=None):
     try:
         work = os.path.join(quarantine, "work")
         os.makedirs(work)
-        root, source, name = resolve(target, quarantine)
+        root, source, name = resolve(target, quarantine, copy)
         out_dir = os.path.abspath(out_dir or os.path.join(os.getcwd(), "skill-rentgen-report"))
         real_root, real_out = os.path.realpath(root), os.path.realpath(out_dir)
-        if source["kind"] == "local" and (real_out + os.sep).startswith(real_root + os.sep):
+        in_place = source["kind"] == "local" or source.pop("copy", False)
+        if in_place and (real_out + os.sep).startswith(real_root + os.sep):
             raise ToolError("the report folder would sit inside the skill being scanned. "
                             "Run from another folder, or pass --out")
         run = {"id": str(uuid.uuid4()), "lang": lang, "name": name, "display_root": name,
@@ -568,7 +690,10 @@ def _record(target, summary, report, source, how, home):
     if source:
         if not GITHUB.match(source):
             raise ToolError("--source takes a https://github.com/owner/repo address")
-        commit, _ = upstream_head(source)
+        known = ((report.get("subject") or {}).get("source") or {})
+        commit = known.get("commit") if known.get("url") == source else None
+        if not (commit and _SHA.match(commit)):
+            commit, _ = upstream_head(source)
         upstream = {"url": source, "commit": commit}
     plugin = _plugin_of(target)
     data = registry.load(home)
@@ -597,7 +722,48 @@ def adopt(target, lang, out_dir, home, accept_caution, source, runner=None, how=
     return summary, out_dir, "adopted"
 
 
-def add(target, lang, out_dir, home, accept_caution, project=False, replace=False, runner=None):
+def package(root, name, wanted, out_dir):
+    """Write exactly the scanned files as one file a person can install:
+    <name>.skill for a skill, <name>.plugin for a plugin. The file is read
+    back and every member is compared with the hash from the scan.
+    Returns the path, or None when the folder is neither."""
+    is_plugin = os.path.isfile(os.path.join(root, ".claude-plugin", "plugin.json"))
+    if not is_plugin and not os.path.isfile(os.path.join(root, "SKILL.md")):
+        return None
+    prefix = "" if is_plugin else name + "/"
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, name + (".plugin" if is_plugin else ".skill"))
+    try:
+        with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+            for rel in sorted(wanted):
+                source_file = os.path.join(root, rel)
+                member = zipfile.ZipInfo(prefix + rel, date_time=(1980, 1, 1, 0, 0, 0))
+                member.compress_type = zipfile.ZIP_DEFLATED
+                mode = 0o755 if os.stat(source_file).st_mode & 0o111 else 0o644
+                member.external_attr = (0o100000 | mode) << 16
+                with open(source_file, "rb") as handle:
+                    archive.writestr(member, handle.read())
+        with zipfile.ZipFile(path) as archive:
+            names = sorted(archive.namelist())
+            same = names == sorted(prefix + rel for rel in wanted) and all(
+                hashlib.sha256(archive.read(prefix + rel)).hexdigest() == wanted[rel]
+                for rel in wanted)
+    except (OSError, zipfile.BadZipFile, KeyError) as error:
+        same = False
+        detail = clean_snippet(str(error), 100)
+    else:
+        detail = "the file does not match what was scanned"
+    if not same:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        raise ToolError("could not write the package: %s; nothing was written" % detail)
+    return path
+
+
+def add(target, lang, out_dir, home, accept_caution, project=False, replace=False, runner=None,
+        copy=None, as_file=False):
     """Scan a skill and, if the verdict allows, install exactly the bytes
     that were scanned, then record them. Returns (summary, out_dir, outcome, where)."""
     box = {}
@@ -611,11 +777,15 @@ def add(target, lang, out_dir, home, accept_caution, project=False, replace=Fals
         if verdict == "caution" and not accept_caution:
             box["outcome"] = "needs-acceptance"
             return
+        name = re.sub(r"[^A-Za-z0-9._-]", "-", summary["name"]).strip(".-") or "skill"
+        if as_file:
+            made = package(root, name, summary.get("files_sha256", {}), report_dir)
+            box["outcome"], box["where"] = ("packaged", made) if made else ("not-one-skill", "")
+            return
         if not os.path.isfile(os.path.join(root, "SKILL.md")):
             box["outcome"] = "plugin" if os.path.isdir(os.path.join(root, ".claude-plugin")) \
                 else "not-one-skill"
             return
-        name = re.sub(r"[^A-Za-z0-9._-]", "-", summary["name"]).strip(".-") or "skill"
         dest = os.path.join(base, name)
         if os.path.lexists(dest) and not replace:
             box["outcome"], box["where"] = "exists", dest
@@ -652,7 +822,7 @@ def add(target, lang, out_dir, home, accept_caution, project=False, replace=Fals
         _record(dest, summary, report, source, "add", home)
         box["outcome"], box["where"] = "installed", dest
 
-    summary, _, out_dir = scan(target, lang, out_dir, runner=runner, then=install)
+    summary, _, out_dir = scan(target, lang, out_dir, runner=runner, then=install, copy=copy)
     return summary, out_dir, box.get("outcome", "refused"), box.get("where", "")
 
 
@@ -685,6 +855,10 @@ def check(home, name="", lang="he", out_dir=None, hook=False, upstream=False, ru
     """Compare every approved skill to its record, scan again what changed,
     and write the report. Returns (changes, files_written, extras) where
     extras holds the skills never checked and the agent settings that changed."""
+    if name and not any(name in (key, record.get("name"))
+                        for key, record in registry.load(home)["skills"].items()):
+        raise ToolError("no approved skill is called %s. See the names with: list"
+                        % clean_snippet(name, 60))
     changes, extras, data = watch.compare(home, name, hook, upstream_head if upstream else None)
     written = []
     if hook:
@@ -710,6 +884,27 @@ def check(home, name="", lang="he", out_dir=None, hook=False, upstream=False, ru
                                               extras["settings"]))
         written.append(mail_file)
     return changes, written, extras
+
+
+def carry_out(home, out_dir, force=False):
+    """On a machine whose disk does not last, write the registry as one
+    small file next to the reports, so it can be kept elsewhere.
+    Returns (path, sign) or None."""
+    sign = registry.short_lived()
+    if not (sign or force):
+        return None
+    out_dir = os.path.abspath(out_dir or os.path.join(os.getcwd(), "skill-rentgen-report"))
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, registry.CARRY_NAME)
+    dump_json(registry.export_data(home), path)
+    return path, sign
+
+
+def _say_carry(made):
+    if made:
+        print("This machine does not keep its disk between sessions (%s is set). The registry "
+              "was also written to one small file: %s" % (made[1], made[0]))
+        print("Keep that file somewhere that lasts. Next time, start with: registry import <file>")
 
 
 # ----------------------------------------------------------------- helpers
@@ -874,14 +1069,16 @@ def trial_command(args):
             declared = [item["host"] for item in (report.get("label") or {}).get("network", [])
                         if item.get("declared")]
             record = trial_mod.run(root, work, name, declared, args.run or (), not args.no_scripts,
-                                   args.engine, args.image, args.timeout)
+                                   args.engine, args.image, args.timeout,
+                                   start=args.start_engine)
         for code in langs:
             box["report"] = _save_text(os.path.join(out_dir, "%s.trial.%s.md" % (name, code)),
                                        trial_mod.render(record, code))
         dump_json(record, os.path.join(out_dir, "%s.trial.json" % name))
         box["trial"] = record
 
-    summary, report, out_dir = scan(args.target, args.lang, args.out, False, then=after)
+    summary, report, out_dir = scan(args.target, args.lang, args.out, False, then=after,
+                                    copy=args.copy)
     static = exit_code(summary, args.fail_on)
     if args.agent_pack:
         print("\n".join(summary["terminal"]))
@@ -943,6 +1140,10 @@ def main(argv):
     add_cmd.add_argument("--project", action="store_true",
                          help="install into ./.claude/skills instead of ~/.claude/skills")
     add_cmd.add_argument("--replace", action="store_true", help="replace a skill of the same name")
+    add_cmd.add_argument("--as-file", action="store_true",
+                         help="do not install here: write exactly the scanned files as one "
+                              ".skill or .plugin file to install. This is what happens by "
+                              "itself on a machine that does not keep its disk")
     baseline_cmd = commands.add_parser(
         "baseline", help="check everything installed that has no record yet, and record what passes")
     check_cmd = commands.add_parser("check", help="see whether approved skills changed")
@@ -955,8 +1156,21 @@ def main(argv):
     notify_cmd = commands.add_parser("notify", help="set the address for alert drafts")
     notify_cmd.add_argument("--email")
     notify_cmd.add_argument("--clear", action="store_true")
-    for cmd in (adopt_cmd, check_cmd, list_cmd, notify_cmd, add_cmd, baseline_cmd):
-        cmd.add_argument("--home", help="registry folder (default: ~/.skill-rentgen)")
+    registry_cmd = commands.add_parser(
+        "registry", help="carry the registry to another machine or session as one small file")
+    registry_actions = registry_cmd.add_subparsers(dest="action")
+    export_cmd = registry_actions.add_parser("export", help="write the registry as one file")
+    export_cmd.add_argument("--to", metavar="FILE", help="default: ./skill-rentgen-report/%s"
+                            % registry.CARRY_NAME)
+    import_cmd = registry_actions.add_parser("import", help="take approvals from such a file")
+    import_cmd.add_argument("file")
+    import_cmd.add_argument("--replace", action="store_true",
+                            help="drop what is here first, instead of keeping the newer record")
+    where_cmd = registry_actions.add_parser("where", help="say where the registry is and what it holds")
+    for cmd in (adopt_cmd, check_cmd, list_cmd, notify_cmd, add_cmd, baseline_cmd, export_cmd,
+                import_cmd, where_cmd):
+        cmd.add_argument("--home", help="registry folder (default: SKILL_RENTGEN_HOME, "
+                                        "or ~/.skill-rentgen)")
     for cmd in (adopt_cmd, check_cmd, add_cmd, baseline_cmd):
         cmd.add_argument("--lang", choices=("he", "en"), default=None)
         cmd.add_argument("--out", help="folder for the reports (default: ./skill-rentgen-report)")
@@ -980,7 +1194,12 @@ def main(argv):
     trial_cmd.add_argument("--no-scripts", action="store_true",
                            help="do not start the scripts that the instructions point to")
     trial_cmd.add_argument("--engine", choices=trial_mod.ENGINES, help="default: the first that answers")
-    trial_cmd.add_argument("--image", help="sandbox image (default: %s)" % trial_mod.DEFAULT_IMAGE)
+    trial_cmd.add_argument("--image", help="sandbox image (default: %s; when it cannot be fetched, "
+                                           "on Linux: this machine's own programs, read-only. "
+                                           "`host` asks for that directly)" % trial_mod.DEFAULT_IMAGE)
+    trial_cmd.add_argument("--start-engine", action="store_true",
+                           help="when Docker is installed and its service is not running: start "
+                                "the service for this run and stop it afterwards (Linux, as root)")
     trial_cmd.add_argument("--timeout", type=int, default=15, help="seconds for each command (5 to 120)")
     trial_cmd.add_argument("--agent-pack", action="store_true",
                            help="write a pack for an agent trial in cowork-harness, and start nothing")
@@ -993,6 +1212,10 @@ def main(argv):
     trial_cmd.add_argument("--out", help="folder for the reports (default: ./skill-rentgen-report)")
     trial_cmd.add_argument("--output-format", choices=("text", "json"), default="text")
     trial_cmd.add_argument("--fail-on", choices=("caution", "block"), default="caution")
+    for cmd in (scan_cmd, add_cmd, trial_cmd):
+        cmd.add_argument("--copy", metavar="FOLDER",
+                         help="with a GitHub address: a folder that already holds a copy of that "
+                              "repository. The copy is read; nothing is downloaded")
     commands.add_parser("version", help="print the version")
     args = parser.parse_args(argv)
     try:
@@ -1014,7 +1237,8 @@ def main(argv):
             raise ToolError("no saved report for %s in %s" % (name, folder))
         return 0
     if args.command == "scan":
-        summary, report, out_dir = scan(args.target, args.lang, args.out, args.keep_work)
+        summary, report, out_dir = scan(args.target, args.lang, args.out, args.keep_work,
+                                        copy=args.copy)
         if args.output_format in ("json", "sarif"):
             json.dump(report if args.output_format == "json" else sarif(report), sys.stdout,
                       ensure_ascii=False, indent=2, sort_keys=True)
@@ -1048,10 +1272,51 @@ def main(argv):
         sys.stderr.write("Draft only. Fill in every purpose, check each line, and save it as "
                          "skill-capabilities.json next to SKILL.md.\n")
         return 0
+    if args.command == "registry":
+        if not args.action:
+            raise ToolError("say what to do: registry export, registry import <file>, or registry where")
+        home = registry.home_dir(args.home)
+        if args.action == "export":
+            if args.to:
+                path = os.path.abspath(args.to)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                dump_json(registry.export_data(home), path)
+            else:
+                path = carry_out(home, None, force=True)[0]
+            print("Registry written to: %s (%d approved)" % (path, len(registry.load(home)["skills"])))
+            print("It holds names, paths and hashes, and no file of any skill. "
+                  "Load it elsewhere with: registry import <file>")
+            return 0
+        if args.action == "import":
+            try:
+                result = registry.import_data(home, registry.read_carry(args.file), args.replace)
+            except ValueError as error:
+                raise ToolError("nothing was taken: %s" % error)
+            print("Taken: %d approvals written %s. Kept %d newer records that were already here."
+                  % (result["taken"], result["exported_at"] or "at an unknown time", result["kept"]))
+            if result["dropped"]:
+                print("Left out: %d entries that are not valid records." % result["dropped"])
+            print("An approval is tied to the folder the skill was in. Run `check` to compare "
+                  "what is installed here with what was approved.")
+            return 0
+        data = registry.load(home)
+        sign = registry.short_lived()
+        print("Registry folder: %s (%s)" % (home, "exists" if os.path.isfile(
+            registry.registry_path(home)) else "nothing saved here yet"))
+        print("Approved: %d. Agent settings fingerprint: %s" % (
+            len(data["skills"]), "saved" if data["agent_settings"] else "none"))
+        print("Disk: %s" % ("does not last beyond this session (%s is set). Keep the registry "
+                            "with `registry export`, load it with `registry import`" % sign
+                            if sign else "kept between sessions, as far as this tool can tell"))
+        return 0
     if args.command in ("adopt", "check", "list", "notify", "add", "baseline"):
         home = registry.home_dir(args.home)
         settings = registry.load(home)["settings"]
         lang = getattr(args, "lang", None) or settings.get("lang") or "he"
+        if (args.command in ("check", "list", "baseline") and not getattr(args, "hook", False)
+                and registry.short_lived() and not os.path.isfile(registry.registry_path(home))):
+            sys.stderr.write("No registry in this session yet. If you kept a registry file from an "
+                             "earlier session, load it first: registry import <file>\n")
     if args.command == "notify":
         data = registry.load(home)
         if args.clear:
@@ -1077,16 +1342,29 @@ def main(argv):
                     verdict += " (accepted: %s)" % ", ".join(record["accepted"][:4])
                 print("%-28s %-18s %s  %d files  %s" % (
                     record.get("name", key), verdict,
-                    record.get("adopted_at", "")[:10], len(record.get("files", {})),
+                    record.get("adopted_at", "")[:10],
+                    len(record.get("files") or {}) or record.get("file_count", 0),
                     record.get("path", "")))
         return 0
     if args.command == "add":
+        sign = registry.short_lived()
+        as_file = args.as_file or bool(sign and not args.project)
         summary, out_dir, outcome, where = add(args.target, lang, args.out, home,
-                                               args.accept_caution, args.project, args.replace)
+                                               args.accept_caution, args.project, args.replace,
+                                               copy=args.copy, as_file=as_file)
         print("\n".join(summary["terminal"]))
         print("Report: %s" % os.path.join(out_dir, summary["primary"]))
         if outcome == "installed":
             print("Installed and recorded: %s" % where)
+            _say_carry(carry_out(home, out_dir))
+            return 0
+        if outcome == "packaged":
+            if sign and not args.as_file:
+                print("This machine does not keep its disk between sessions (%s is set), so "
+                      "installing into it would not last." % sign)
+            print("Packaged, exactly the files that were scanned: %s" % where)
+            print("Hand that file to the person to install. Once it is installed, run `baseline` "
+                  "to record it and start watching it.")
             return 0
         print({"refused": "Not installed. The verdict is: do not install.",
                "needs-acceptance": "Not installed yet. Read the report. If you accept what it "
@@ -1111,6 +1389,7 @@ def main(argv):
                                                row["kind"], row["name"], row["path"]))
             print("%d checked, %d recorded. Agent settings fingerprint saved." % (
                 len(rows), sum(1 for row in rows if row["outcome"] == "adopted")))
+            _say_carry(carry_out(home, args.out))
         if any(row["outcome"] == "refused" for row in rows):
             return 2
         return 1 if any(row["outcome"] == "needs-acceptance" for row in rows) else 0
@@ -1128,6 +1407,7 @@ def main(argv):
             return 1
         print("Recorded as approved: %s (%d files)" % (summary["name"],
                                                        len(summary.get("files_sha256", {}))))
+        _say_carry(carry_out(home, out_dir))
         return 0
     if args.command == "check":
         if args.hook:

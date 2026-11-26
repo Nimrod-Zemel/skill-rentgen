@@ -90,7 +90,14 @@
           },
           "files": {
             "type": "object",
-            "description": "Path to SHA-256, for every file."
+            "description": "Path to SHA-256, for every file. Empty in a record that was carried in from another machine and has not been compared yet."
+          },
+          "tree": {
+            "type": "string",
+            "description": "One hash for the whole file list. Present in a record that was carried in."
+          },
+          "file_count": {
+            "type": "integer"
           },
           "upstream": {
             "type": "object",

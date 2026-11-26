@@ -45,6 +45,9 @@ The tool reads files written by strangers. These rules are tested in `tests/`.
 | --- | --- |
 | A scan never executes and never imports the scanned skill | Reading must not be an attack surface |
 | Only `trial` starts anything of a skill, and only inside a container. With no container engine it reports "not checked" | A trial that falls back to your own machine would be the attack |
+| The tool starts a container engine's service only with `--start-engine`, only on Linux as root, and stops the one it started | Starting a service that runs as root is a change to the machine. It happens when asked and is undone |
+| A GitHub address given with `--copy` is read from a folder on disk. Git is never started, and the `.git` folder is read as a few plain text files and never scanned or run | A copy made by another tool must not become a way to run that copy's hooks or settings |
+| A carried registry file is checked for damage and every record is rebuilt field by field; a record that is not an approval is left out | The file comes from outside the tool's own folder |
 | The session hook is a separate script that loads only the code that reads | The one part that starts by itself must not be able to install, block, scan or reach the network |
 | The tool restarts itself in Python's isolated mode with bytecode reading disabled | A `json.py` or a `.pyc` planted in the current folder or next to the scripts is not loaded |
 | Every stage runs in its own process with a time limit, and on macOS and Linux a CPU limit and a memory limit | A file built to hang or exhaust a parser stops one stage, not the scan |
@@ -70,9 +73,18 @@ What it does not see, and what you should not conclude from a quiet run:
 3. **A skill can recognise a sandbox** and behave well inside it. The recording files are writable by the code being watched, so code written against this tool can also erase its own traces from them. Reads by access time and the comparison of files before and after do not depend on those files.
 4. **A container shares the kernel of the machine.** It is the right fence for looking at a skill. It is not a guarantee against code written to break out of containers. On a Mac, Docker and Podman run containers inside a virtual machine, which adds a wall; on Linux they do not.
 5. **The sandbox image** is `python:3.12-slim` from Docker's official library unless you choose another. It is not pinned to a digest. A bad image could lie about what a skill did; it could not reach your files or the network any more than the skill can.
+   **When that image cannot be had, on Linux,** the container is given the machine's own program folders: `/usr`, the top-level folders that hold programs and libraries, the dynamic linker's files under `/etc`, and the install folder of Python or Node when it is under `/opt`. Each is mounted read-only. No home folder, no `/var`, no `/tmp`, and nothing else from `/etc` is given. The same fences apply: no network, no privileges, a read-only system. What changes is what the code can read: every program installed on the machine, and any file that somebody put under `/usr` or that `/opt` folder. If you keep something private there, use the default image.
 6. **Programs other than Python, Node and the shell** are not recorded call by call. Their effects on the decoys and on the files are still seen.
 
 The agent trial is not run by this tool. It writes a scenario for cowork-harness and reads the harness's result. For a skill that is not your own the scenario asks for the harness's virtual-machine tier, following the harness's own security notes, which say its container tier is for trusted code.
+
+## A machine that starts empty: the carried registry
+
+On a machine whose disk does not last, the registry is also written as one small file, and the instructions tell the agent to keep it where the session keeps things between chats. That file is not signed: the tool has no secret to sign it with, because it has no account and keeps no key. It is as trusted as the place it was kept. Three things follow:
+
+1. Anyone who can write to that place can add an approval. A project that several people can write to is such a place.
+2. An approval is a path and one hash. It does not make a skill pass a scan. It makes `check` stay quiet about files that match the hash.
+3. The instructions tell the agent to load a registry file only from the project's own documents or from the user, and never from inside a skill or a repository being checked.
 
 ## Residual risks
 
@@ -84,9 +96,9 @@ Three residual risks remain and are accepted:
 
 ## Network, files, telemetry
 
-- Network: `codeload.github.com` when you scan a GitHub address. `api.github.com` when you use `adopt --source`, `add` with a GitHub address, or `check --upstream`. Nothing else. The container engine, not this tool, downloads the sandbox image the first time a trial runs.
+- Network: `codeload.github.com` when you scan a GitHub address without `--copy`. `api.github.com` when you use `adopt --source`, `add` with a GitHub address whose version the scan does not already know, or `check --upstream`. Nothing else. The container engine, not this tool, downloads the sandbox image the first time a trial runs, if it can.
 - Files written: the report folder you choose; `~/.skill-rentgen/registry.json` and `state.json`; a temporary folder that is removed; with `add`, the skill folder you asked for; with `block --yes`, two lines in `./.claude/settings.local.json`.
-- Programs started: Python for the tool's own stages; `docker` or `podman` for a trial; `cpd` with `inventory --doctor`, if you installed it.
+- Programs started: Python for the tool's own stages; `docker` or `podman` for a trial; `dockerd` with `trial --start-engine`, stopped when the run ends; `cpd` with `inventory --doctor`, if you installed it.
 - Telemetry: none.
 
 ## Reporting a problem

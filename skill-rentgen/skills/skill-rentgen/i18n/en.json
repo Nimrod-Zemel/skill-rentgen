@@ -13,6 +13,7 @@
  },
  "registry": {
   "added": "New files",
+  "carried_changed": "This record was carried from another session as one hash for all its files. The files here do not match it, so something changed; which file cannot be said. The scan below is of the files as they are now.",
   "changed": "Changed files",
   "files_word": "files",
   "gone": "The folder no longer exists.",
@@ -606,7 +607,8 @@
   "not_run": "Not checked",
   "ran": "What was started",
   "reason_engine_failed": "The container engine could not start the sandbox. Nothing was started.",
-  "reason_image_missing": "The sandbox image is not on this machine and could not be downloaded. Nothing was started.",
+  "reason_engine_stopped": "Docker is installed on this machine and its service is not running, so nothing was started. On your own computer: open Docker Desktop or OrbStack and run again. On a Linux machine with no desktop, such as a cloud session: run again with `--start-engine`.",
+  "reason_image_missing": "The sandbox image is not on this machine and could not be downloaded, and this machine's own programs could not stand in for it. Nothing was started.",
   "reason_no_engine": "A trial run needs Docker or Podman running on this machine. Neither answered, so nothing was started.",
   "reason_no_result": "The sandbox ended without a result that carries this run's mark. Treat the skill as not checked.",
   "reason_nothing_to_run": "Nothing in this skill starts by itself, and its instructions point to no script. There was nothing to start. To try one command, add `--run`.",
@@ -639,9 +641,11 @@
   "w_atime_yes": "Reads of the decoys were detected by access time, by call recording and by the shell trace",
   "w_decoys": "{n} decoy files, planted where real secrets and settings live",
   "w_engine": "A {engine} container from the image {image}, removed when the run ended",
+  "w_engine_host": "A {engine} container with no image downloaded: it used this machine's own program folders, each one read-only, and was removed when the run ended",
   "w_files": "No access to your files. The skill ran on a copy, in a home folder made for this run",
   "w_limits": "Read-only system, no extra privileges, limits on time, memory and number of processes",
   "w_network": "No network at all",
+  "w_started": "The {engine} service was not running. The tool started it for this run and stopped it afterwards",
   "where": "Where it ran"
  },
  "ui": {

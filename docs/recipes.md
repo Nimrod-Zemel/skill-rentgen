@@ -45,6 +45,24 @@ Linux runners on GitHub have Docker. This starts what the skill starts by itself
 
 Useful options: `--run "python3 scripts/tool.py sample.csv"` starts one more command of yours in the container, `--timeout 30` gives each command more time, `--image` chooses another image when your hooks need a program that `python:3.12-slim` does not have.
 
+## In a cloud session
+
+A cloud session starts empty, often cannot reach GitHub's download host or Docker's image library, and has Docker installed but not running. Three options cover that:
+
+```bash
+# A GitHub address, read from a copy the session already fetched with its own repository tool
+python3 skill_rentgen.py scan https://github.com/owner/repo/tree/main/skills/x --copy /path/to/clone
+
+# A trial run: start Docker for this run, stop it afterwards, download nothing
+python3 skill_rentgen.py trial ./my-skill --start-engine
+
+# Keep what you approved for the next session
+python3 skill_rentgen.py registry export --to skill-rentgen-registry.json
+python3 skill_rentgen.py registry import skill-rentgen-registry.json
+```
+
+`add` in such a session writes `<name>.skill` or `<name>.plugin` into the report folder instead of installing.
+
 ## Check before every commit
 
 With [pre-commit](https://pre-commit.com):

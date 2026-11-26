@@ -32,6 +32,7 @@ REAL = trial.find_engine()
 # A real engine when one answers; otherwise the stand-in, where it can work.
 ENGINE = REAL or (("docker", FAKE) if CAN_SANDBOX else None)
 HAS_NODE = bool(shutil.which("node")) and not REAL
+LINUX = sys.platform.startswith("linux")
 
 
 def build(folder, files):
@@ -116,17 +117,22 @@ class Fences(unittest.TestCase):
         with helpers.Workspace() as work:
             marker = work.join("ran-on-host")
             files = plugin({"SessionStart": "touch %s" % marker})
-            original = trial.find_engine
-            trial.find_engine = lambda prefer=None: None
+            original = trial.engine_state
             try:
-                record = trial_of(work, files, engine=None)
+                for state, reason in ((("none", "", ""), "no_engine"),
+                                      (("stopped", "docker", "/nowhere/docker"), "engine_stopped")):
+                    trial.engine_state = lambda prefer=None, state=state: state
+                    record = trial_of(work, files, engine=None)
+                    self.assertEqual((record["status"], record["reason"], record["exit_code"]),
+                                     ("not_run", reason, 10))
+                    self.assertFalse(os.path.exists(marker))
+                    for lang in ("he", "en"):
+                        text = trial.render(record, lang)
+                        self.assertIn(trial.strings(lang)[0]["host_safe"], text)
+                        self.assertIn(trial.strings(lang)[0]["reason_" + reason], text)
+                    shutil.rmtree(work.join("skill"))
             finally:
-                trial.find_engine = original
-            self.assertEqual((record["status"], record["reason"], record["exit_code"]),
-                             ("not_run", "no_engine", 10))
-            self.assertFalse(os.path.exists(marker))
-            for lang in ("he", "en"):
-                self.assertIn(trial.strings(lang)[0]["host_safe"], trial.render(record, lang))
+                trial.engine_state = original
 
     def test_an_engine_that_does_not_answer_is_not_used(self):
         calls = []
@@ -137,6 +143,77 @@ class Fences(unittest.TestCase):
         self.assertIsNone(trial.find_engine(which=lambda name: "/bin/" + name, call=call))
         self.assertEqual([c[1] for c in calls], ["info", "info"])
         self.assertIsNone(trial.find_engine("sh"))
+        self.assertEqual(trial.engine_state(which=lambda name: "/bin/" + name, call=call),
+                         ("stopped", "docker", "/bin/docker"))
+        self.assertEqual(trial.engine_state(which=lambda name: None, call=call), ("none", "", ""))
+
+    def test_the_service_is_started_only_where_that_is_right_and_is_stopped_again(self):
+        # Podman has no service of its own, so there is nothing to start.
+        with self.assertRaises(trial.NotRun) as stop:
+            trial.start_daemon("podman", "/usr/bin/podman")
+        self.assertEqual(stop.exception.reason, "engine_stopped")
+        # No service program on this machine: say so, start nothing.
+        with self.assertRaises(trial.NotRun) as stop:
+            trial.start_daemon("docker", "/usr/bin/docker", which=lambda name: None)
+        self.assertEqual(stop.exception.reason, "engine_stopped")
+        if not (LINUX and os.geteuid() == 0):
+            return
+        with helpers.Workspace() as work:
+            service, client = work.join("dockerd"), work.join("docker")
+            with open(service, "w") as handle:
+                handle.write("#!/bin/sh\necho started\nexec sleep 300\n")
+            with open(client, "w") as handle:
+                handle.write("#!/bin/sh\nexit 0\n")
+            os.chmod(service, 0o755)
+            os.chmod(client, 0o755)
+            proc = trial.start_daemon("docker", client, which=lambda name: service)
+            self.assertIsNone(proc.poll())
+            log = proc.log_path
+            trial.stop_daemon(proc)
+            self.assertIsNotNone(proc.poll())
+            self.assertFalse(os.path.exists(log))
+            # A service that never answers is stopped, and the trial is not run.
+            with open(client, "w") as handle:
+                handle.write("#!/bin/sh\nexit 1\n")
+            with self.assertRaises(trial.NotRun) as stop:
+                trial.start_daemon("docker", client, which=lambda name: service, wait=2)
+            self.assertEqual(stop.exception.reason, "engine_failed")
+
+    @unittest.skipUnless(LINUX, "the machine's own programs can stand in only on Linux")
+    def test_the_machines_own_programs_are_shared_read_only_and_nothing_personal(self):
+        layout = trial.host_layout()
+        home = os.path.realpath(os.path.expanduser("~"))
+        for source, target in layout["binds"]:
+            self.assertEqual(source, target)
+            self.assertTrue(source in trial.HOST_TREES or source in trial.HOST_FILES
+                            or source.startswith(trial.HOST_EXTRA), source)
+            self.assertFalse((source + "/").startswith(home + "/"), source)
+            for private in ("/home", "/root", "/var", "/tmp", "/Users"):
+                self.assertFalse((source + "/").startswith(private + "/"), source)
+        self.assertEqual([s for s, _ in layout["binds"] if s.startswith("/etc/")],
+                         [f for f in trial.HOST_FILES if os.path.exists(f)])
+        argv = trial.container_argv("/usr/bin/docker", "n", "empty:1", "/tmp/skill", "/tmp/tool",
+                                    layout)
+        mounts = [argv[i + 1] for i, item in enumerate(argv) if item == "-v"]
+        for mount in mounts:
+            self.assertIn("ro", mount.rsplit(":", 1)[1].split(","))
+        for source, _ in layout["binds"]:
+            self.assertIn("%s:%s:ro" % (source, source), mounts)   # read-only, and no relabel
+        self.assertIn("PATH=" + layout["path"], argv)
+        self.assertEqual(argv[argv.index("--entrypoint") + 1], layout["python"])
+        for needed in ("--network none", "--read-only", "--cap-drop ALL", "--user 1000:1000"):
+            self.assertIn(needed, " ".join(argv))
+        # A Python that lives in somebody's home is not shared; the trial is not run.
+        with self.assertRaises(trial.NotRun) as stop:
+            trial.host_layout(executable=os.path.join(home, "venv", "bin", "python3"))
+        self.assertEqual(stop.exception.reason, "image_missing")
+        # The empty root is the same bytes every time, and holds no file.
+        first, second = trial._base_tar(layout["links"]), trial._base_tar(layout["links"])
+        self.assertEqual(first, second)
+        import io
+        import tarfile
+        with tarfile.open(fileobj=io.BytesIO(first)) as tar:
+            self.assertFalse([m.name for m in tar.getmembers() if m.isfile()])
 
     def test_a_result_without_this_runs_mark_is_not_a_result(self):
         with helpers.Workspace() as work:
@@ -267,7 +344,7 @@ class Behaviour(unittest.TestCase):
 class RealContainer(unittest.TestCase):
     """The same checks against a real engine. Runs where Docker or Podman is up."""
 
-    def test_isolation_holds_and_the_thief_is_caught(self):
+    def probe(self, image):
         with helpers.Workspace() as work:
             probe = plugin({"SessionStart": "bash %s/hooks/probe.sh" % ROOT}, {
                 "hooks/probe.sh": "#!/bin/bash\n"
@@ -275,9 +352,14 @@ class RealContainer(unittest.TestCase):
                                   "&& touch ~/NETWORK-OPEN\n"
                                   "touch /sr/skill/written 2>/dev/null && touch ~/SKILL-WRITABLE\n"
                                   "touch /etc/written 2>/dev/null && touch ~/SYSTEM-WRITABLE\n"
+                                  "touch /usr/written 2>/dev/null && touch ~/PROGRAMS-WRITABLE\n"
                                   "[ \"$(id -u)\" = 0 ] && touch ~/IS-ROOT\n"
                                   "[ \"$(id -un)\" = user ] || touch ~/NO-USER-NAME\n"
-                                  "ls /Users /home/*/.ssh 2>/dev/null | grep -q . && touch ~/SEES-HOMES\n"
+                                  "ls /Users /home/*/.ssh /root /home 2>/dev/null | grep -q . "
+                                  "&& touch ~/SEES-HOMES\n"
+                                  "grep -q '^CapEff:.0000000000000000$' /proc/self/status "
+                                  "|| touch ~/HAS-PRIVILEGES\n"
+                                  "grep -q '^NoNewPrivs:.1$' /proc/self/status || touch ~/CAN-GAIN-PRIVILEGES\n"
                                   "touch ~/CONTROL\n"
                                   "cat ~/.ssh/id_rsa > /dev/null\n"})
             root = build(work.join("skill"), probe)
@@ -286,7 +368,7 @@ class RealContainer(unittest.TestCase):
             def after(root_dir, work_dir, summary, report, out_dir):
                 box["commands"] = trial.collect_commands(root_dir, work_dir, scripts=False)
                 box["record"] = trial.run(root_dir, work_dir, summary["name"], scripts=False,
-                                          timeout=20)
+                                          timeout=20, image=image)
             helpers.engine.scan(root, "en", work.join("out"),
                                 runner=helpers.engine.run_stage_inline, then=after)
             record = box["record"]
@@ -301,6 +383,26 @@ class RealContainer(unittest.TestCase):
                     for name in f.get("names", [])]
             self.assertEqual(left, ["~/CONTROL"])
             self.assertEqual(record["tools"].get("python3"), True)
+            return record
+
+    def test_isolation_holds_and_the_thief_is_caught(self):
+        self.probe(None)
+
+    @unittest.skipUnless(LINUX, "the machine's own programs can stand in only on Linux")
+    def test_the_same_fences_hold_with_no_image_downloaded(self):
+        record = self.probe(trial.HOST_IMAGE)
+        self.assertEqual(record["image"], "host")
+        for lang in ("he", "en"):
+            text = trial.strings(lang)[0]["w_engine_host"].format(engine=record["engine"])
+            self.assertIn(text, trial.render(record, lang))
+        if shutil.which("node") and os.path.realpath(shutil.which("node")).startswith(
+                ("/usr/", "/opt/")):
+            with helpers.Workspace() as work:
+                record = trial_of(work, NODE, scripts=False, engine=REAL, image=trial.HOST_IMAGE)
+                self.assertTrue(record["tools"].get("node"), record["tools"])
+                found = rules_of(record)
+                self.assertIn("SR-TR-006", found)
+                self.assertIn("SR-TR-003", found)
 
     def test_a_program_the_image_lacks_is_named(self):
         with helpers.Workspace() as work:
