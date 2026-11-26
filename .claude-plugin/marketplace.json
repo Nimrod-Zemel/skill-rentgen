@@ -5,7 +5,7 @@
     "url": "https://github.com/Nimrod-Zemel"
   },
   "metadata": {
-    "description": "SkillRentgen: check an agent skill before you install it, and know when it changes."
+    "description": "SkillRentgen: check an agent skill before you install it, try it in a sealed container, and know when it changes."
   },
   "plugins": [
     {
