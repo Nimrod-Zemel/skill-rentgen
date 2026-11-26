@@ -185,11 +185,10 @@ def git_facts(top):
     Returns {"remotes": [address], "branch": name, "commit": id, "refs": {name: [ids]}}."""
     facts = {"remotes": [], "branch": None, "commit": None, "refs": {}}
     git = os.path.join(top, ".git")
-    if os.path.isfile(git):          # a worktree or a submodule: one line, "gitdir: <path>"
-        pointer = re.match(r"gitdir:[ \t]*(.+)", _small(git, 4096))
-        if pointer:
-            git = os.path.normpath(os.path.join(top, pointer.group(1).strip()))
-    if not os.path.isdir(git):
+    # A worktree or a submodule has a one-line .git file that points at
+    # another folder. That pointer is not followed: the copy then says
+    # nothing about itself, and no version is recorded.
+    if os.path.islink(git) or not os.path.isdir(git):
         return facts
     facts["remotes"] = _GIT_URL.findall(_small(os.path.join(git, "config")))[:20]
     last = None

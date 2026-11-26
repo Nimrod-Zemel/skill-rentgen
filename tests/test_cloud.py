@@ -94,6 +94,13 @@ class CopyOnDisk(unittest.TestCase):
             top = self._copy(ws, git=False)
             _, report, _ = self._scan(ws, "https://github.com/owner/repo", top)
             self.assertIsNone(report["subject"]["source"]["commit"])
+            # A .git file that points somewhere else is not followed.
+            elsewhere = ws.join("elsewhere")
+            write(os.path.join(elsewhere, "config"), '[remote "origin"]\n\turl = https://x/a/b\n')
+            write(os.path.join(elsewhere, "HEAD"), self.COMMIT + "\n")
+            write(os.path.join(top, ".git"), "gitdir: %s\n" % elsewhere)
+            self.assertEqual(helpers.engine.git_facts(top),
+                             {"remotes": [], "branch": None, "commit": None, "refs": {}})
 
     def test_a_copy_of_something_else_is_refused(self):
         error = helpers.engine.ToolError

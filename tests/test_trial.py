@@ -192,6 +192,10 @@ class Fences(unittest.TestCase):
                 self.assertFalse((source + "/").startswith(private + "/"), source)
         self.assertEqual([s for s, _ in layout["binds"] if s.startswith("/etc/")],
                          [f for f in trial.HOST_FILES if os.path.exists(f)])
+        for source, _ in layout["binds"]:
+            if source.startswith(trial.HOST_EXTRA):       # only program and library folders
+                self.assertIn(os.path.basename(source), trial.HOST_PARTS, source)
+                self.assertNotEqual(os.path.dirname(source), "/opt", source)
         argv = trial.container_argv("/usr/bin/docker", "n", "empty:1", "/tmp/skill", "/tmp/tool",
                                     layout)
         mounts = [argv[i + 1] for i, item in enumerate(argv) if item == "-v"]
@@ -200,6 +204,10 @@ class Fences(unittest.TestCase):
         for source, _ in layout["binds"]:
             self.assertIn("%s:%s:ro" % (source, source), mounts)   # read-only, and no relabel
         self.assertIn("PATH=" + layout["path"], argv)
+        covers = [argv[i + 1] for i, item in enumerate(argv) if item == "--tmpfs"]
+        for folder in layout["covered"]:
+            self.assertTrue(any(c.startswith(folder + ":ro,") for c in covers), folder)
+        self.assertEqual(layout["covered"], [f for f in trial.HOST_COVERED if os.path.isdir(f)])
         self.assertEqual(argv[argv.index("--entrypoint") + 1], layout["python"])
         for needed in ("--network none", "--read-only", "--cap-drop ALL", "--user 1000:1000"):
             self.assertIn(needed, " ".join(argv))
@@ -344,7 +352,7 @@ class Behaviour(unittest.TestCase):
 class RealContainer(unittest.TestCase):
     """The same checks against a real engine. Runs where Docker or Podman is up."""
 
-    def probe(self, image):
+    def probe(self, image, more=""):
         with helpers.Workspace() as work:
             probe = plugin({"SessionStart": "bash %s/hooks/probe.sh" % ROOT}, {
                 "hooks/probe.sh": "#!/bin/bash\n"
@@ -360,6 +368,7 @@ class RealContainer(unittest.TestCase):
                                   "grep -q '^CapEff:.0000000000000000$' /proc/self/status "
                                   "|| touch ~/HAS-PRIVILEGES\n"
                                   "grep -q '^NoNewPrivs:.1$' /proc/self/status || touch ~/CAN-GAIN-PRIVILEGES\n"
+                                  + more +
                                   "touch ~/CONTROL\n"
                                   "cat ~/.ssh/id_rsa > /dev/null\n"})
             root = build(work.join("skill"), probe)
@@ -390,7 +399,12 @@ class RealContainer(unittest.TestCase):
 
     @unittest.skipUnless(LINUX, "the machine's own programs can stand in only on Linux")
     def test_the_same_fences_hold_with_no_image_downloaded(self):
-        record = self.probe(trial.HOST_IMAGE)
+        # The settings folders that sit inside the shared program folders, and
+        # those of an install under /opt, must look empty or be absent.
+        record = self.probe(trial.HOST_IMAGE,
+                            "find /usr/local/etc /usr/etc /opt/*/etc -mindepth 1 2>/dev/null | grep -q . "
+                            "&& touch ~/SEES-SETTINGS\n"
+                            "touch /usr/local/etc/x 2>/dev/null && touch ~/SETTINGS-WRITABLE\n")
         self.assertEqual(record["image"], "host")
         for lang in ("he", "en"):
             text = trial.strings(lang)[0]["w_engine_host"].format(engine=record["engine"])

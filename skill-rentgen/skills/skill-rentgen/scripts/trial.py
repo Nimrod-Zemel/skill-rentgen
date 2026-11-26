@@ -48,6 +48,9 @@ DAEMONS = {"docker": "dockerd"}
 HOST_TREES = ("/usr", "/bin", "/sbin", "/lib", "/lib64", "/lib32", "/libx32")
 HOST_FILES = ("/etc/alternatives", "/etc/ld.so.cache", "/etc/ld.so.conf", "/etc/ld.so.conf.d")
 HOST_EXTRA = "/opt/"
+HOST_PARTS = ("bin", "lib", "lib64", "include", "share")
+# Settings folders inside the shared trees. The sandbox sees them empty.
+HOST_COVERED = ("/usr/local/etc", "/usr/etc")
 HOST_PATH = ("/usr/local/sbin", "/usr/local/bin", "/usr/sbin", "/usr/bin", "/sbin", "/bin")
 BASE = "/sandbox"
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -184,29 +187,39 @@ def host_layout(executable=None, which=shutil.which):
     WHY: the default image has to be downloaded once, and some machines and
     most cloud sessions cannot reach the place it comes from. A Linux machine
     already holds everything the sandbox needs: Python, a shell, perhaps Node.
-    Only the system's program folders are shared, and only for reading. No
-    home folder, no /etc beyond the linker's own files, no /var.
+    Only folders that hold programs and libraries are shared, and only for
+    reading: the system's own, and the bin, lib, include and share folders
+    of a Python or Node that is installed under /opt. No home folder, no
+    /var, nothing of /etc beyond the linker's own files, and the settings
+    folders inside /usr are covered.
     Raises NotRun when this machine cannot do it."""
     if not sys.platform.startswith("linux"):
         raise NotRun("image_missing")
-    trees, links, extra = [], {}, []
+    trees, links = [], {}
     for tree in HOST_TREES:
         if os.path.islink(tree):
             links[tree.lstrip("/")] = os.readlink(tree)
         elif os.path.isdir(tree):
             trees.append(tree)
+    folders = list(trees)
 
-    def shared(program):
-        if any(program.startswith(tree + "/") for tree in trees):
+    def share_install(prefix):
+        """An install folder under /opt: its program and library folders only."""
+        if (not prefix.startswith(HOST_EXTRA) or prefix.rstrip("/") == HOST_EXTRA.rstrip("/")
+                or os.path.islink(prefix) or not os.path.isdir(prefix)):
+            return
+        for part in HOST_PARTS:
+            folder = os.path.join(prefix, part)
+            if os.path.isdir(folder) and not os.path.islink(folder) and folder not in folders:
+                folders.append(folder)
+
+    def shared(path):
+        if any(path.startswith(folder + "/") for folder in folders):
             return True
-        if program.startswith(HOST_EXTRA):
-            parts = program.split("/")
-            prefix = "/".join(parts[:3])
-            if len(parts) > 3 and os.path.isdir(prefix) and not os.path.islink(prefix):
-                if prefix not in extra:
-                    extra.append(prefix)
-                return True
-        return False
+        folder = os.path.dirname(path)
+        if os.path.basename(folder) == "bin":
+            share_install(os.path.dirname(folder))
+        return any(path.startswith(folder + "/") for folder in folders)
 
     python = os.path.realpath(executable or sys.executable)
     if not shared(python):
@@ -222,11 +235,14 @@ def host_layout(executable=None, which=shutil.which):
     # Where this machine's programs look for their libraries, kept only for
     # folders that are shared anyway.
     libs = [item for item in os.environ.get("LD_LIBRARY_PATH", "").split(":")
-            if item.startswith("/") and shared(os.path.join(os.path.realpath(item), "x"))]
-    binds = [(item, item) for item in trees + extra]
+            if item.startswith("/") and (os.path.realpath(item) + "/").startswith(
+                tuple(folder + "/" for folder in folders))]
+    binds = [(item, item) for item in folders]
     binds += [(item, item) for item in HOST_FILES if os.path.exists(item)]
+    covered = [item for item in HOST_COVERED
+               if os.path.isdir(item) and any(item.startswith(tree + "/") for tree in trees)]
     return {"python": python, "binds": binds, "path": ":".join(path), "links": links,
-            "libs": ":".join(libs)}
+            "libs": ":".join(libs), "covered": covered}
 
 
 def _base_tar(links):
@@ -308,6 +324,8 @@ def container_argv(engine_path, name, image, skill_dir, tool_dir, host=None):
         for source, target in host["binds"]:
             # No relabel option here: these are the system's own folders.
             argv += ["-v", "%s:%s:ro" % (source, target)]
+        for folder in host.get("covered", ()):
+            argv += ["--tmpfs", folder + ":ro,nosuid,nodev,noexec,size=64k,mode=755"]
         argv += ["-e", "PATH=" + host["path"]]
         if host.get("libs"):
             argv += ["-e", "LD_LIBRARY_PATH=" + host["libs"]]
