@@ -363,7 +363,7 @@ class RealContainer(unittest.TestCase):
                                   "touch /usr/written 2>/dev/null && touch ~/PROGRAMS-WRITABLE\n"
                                   "[ \"$(id -u)\" = 0 ] && touch ~/IS-ROOT\n"
                                   "[ \"$(id -un)\" = user ] || touch ~/NO-USER-NAME\n"
-                                  "ls /Users /home/*/.ssh /root /home 2>/dev/null | grep -q . "
+                                  "find /Users /root /home -mindepth 1 2>/dev/null | grep -q . "
                                   "&& touch ~/SEES-HOMES\n"
                                   "grep -q '^CapEff:.0000000000000000$' /proc/self/status "
                                   "|| touch ~/HAS-PRIVILEGES\n"
