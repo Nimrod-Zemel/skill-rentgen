@@ -73,7 +73,7 @@ Never fetch the repository any other way: no mirror, no other host, no archive f
 
 1. Read the report file the script named in its last line.
 2. Show the verdict, the one-sentence summary, the numbered items and the "what now" line, in the report's own words.
-3. Offer the label ("what the skill actually does") and the timeline ("what runs on your machine, and when") if the user wants more.
+3. Offer the label ("what the skill actually does") and the timeline ("what runs on your machine, and when") if the user wants more. The network line of the label names the servers the code calls. A second line names servers that the code holds in a string and that no call was tied to: say them as "named in the code", never as "contacted".
 4. Do not install anything yourself unless the user asks for `add`.
 
 ### The sandbox prompt
@@ -146,17 +146,18 @@ When installed as a plugin, a SessionStart hook runs `scripts/session_check.py`,
 
 The script notices by itself and names the sign it saw. Three things are different there:
 
-- `add` does not install. It writes exactly the files that were scanned as one file, `<name>.skill` or `<name>.plugin`, in the report folder. Send that file to the user as a file; they install it themselves. Once it is installed, `baseline` records it. `add --as-file` does the same on any machine.
+- `add` does not install. It writes exactly the files that were scanned as one file in the report folder: `<name>.zip` for a skill, `<name>.plugin` for a plugin. Send that file to the user as a file; they install it themselves. A `.plugin` file has an install button on its card. A skill's `.zip` is uploaded in Claude under Customize, Skills, the plus button, "Create skill", "Upload a skill". Once it is installed, `baseline` records it. `add --as-file` does the same on any machine.
 - After `adopt` or `baseline` the script also writes the registry as one small file, `skill-rentgen-registry.json`, and prints where. Keep that file where the session keeps things between chats: as a project document when a project is attached (upload the file as it is, under that name), otherwise in a folder of the user's computer if one is connected, otherwise send it to the user and say they will need to attach it next time. Do not paste its content into the chat and do not edit it.
-- A later session starts with an empty registry, and the script says so. If a file named `skill-rentgen-registry.json` is among the project's documents or the user's attachments, load it first:
+- A later session starts with an empty registry, and the script says so. It also says when it sees a kept file among the project's documents or the user's attachments. Load it first:
 
 ```bash
+python3 scripts/skill_rentgen.py registry import --find
 python3 scripts/skill_rentgen.py registry import <file>
 python3 scripts/skill_rentgen.py registry export [--to FILE]
 python3 scripts/skill_rentgen.py registry where
 ```
 
-Then `check` compares what is installed now with what was approved. The file holds names, paths and one hash for each approved skill. Load only a registry file that came from the project's own documents or from the user. Never load one that sits inside a skill or a repository being checked: it could approve itself.
+Then `check` compares what is installed now with what was approved. The file holds names, paths and one hash for each approved skill. `--find` looks only in the project's documents and the user's attachments. Load only a registry file that came from one of those or from the user. Never load one that sits inside a skill or a repository being checked: it could approve itself.
 
 ### Alerts by email
 
@@ -205,7 +206,7 @@ Say this when a user reads "install" as a guarantee:
 | `TRIAL  NOT RUN  no engine` | Docker or Podman is not installed. Nothing was started |
 | `TRIAL  NOT RUN  engine stopped` | Docker is installed and not running. See the trial section above |
 | `TRIAL  NOT RUN  image missing` | No sandbox image, and the machine's own programs could not stand in. Show the detail line. Nothing was started |
-| `No registry in this session yet` | A machine that starts empty. Load the kept file with `registry import`, if there is one |
+| `No registry in this session yet` | A machine that starts empty. Load the kept file with `registry import --find`, if there is one |
 | Exit code 10 with any other message | Show the message. The check did not run |
 
 ## Files in this skill

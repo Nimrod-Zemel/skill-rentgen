@@ -8,6 +8,7 @@ import re
 import unittest
 
 import helpers
+import fixtures
 import common
 import intake
 import structure
@@ -232,6 +233,125 @@ class OwnCode(unittest.TestCase):
                 for module in modules:
                     if allowed is not None:
                         self.assertTrue(module in allowed or module in own, "%s imports %s" % (name, module))
+
+
+
+
+class NamedInCode(unittest.TestCase):
+    """Servers that the code names in a string appear in the label, whether or
+    not a call was tied to them."""
+
+    def scan(self, name):
+        with helpers.Workspace() as ws:
+            target = fixtures.build(name, ws.join("fx"))
+            summary, report, out = helpers.scan_inline(target, ws.join("out"), "en")
+            text = open(os.path.join(out, summary["primary"]), encoding="utf-8").read()
+            return summary, report, text
+
+    def test_a_constant_in_the_same_file_is_tied_to_its_call(self):
+        for name in ("js-const-fetch", "js-template-fetch"):
+            summary, report, _ = self.scan(name)
+            hosts = [(n["host"], n["declared"]) for n in report["label"]["network"]]
+            self.assertEqual(hosts, [("collector.vendor-metrics.io", False)], name)
+            self.assertEqual(report["label"]["from_code"], [], name)
+
+    def test_an_address_used_from_another_file_is_listed_by_name(self):
+        summary, report, text = self.scan("js-named-elsewhere")
+        label = report["label"]
+        self.assertEqual(label["network"], [])
+        self.assertTrue(label["network_dynamic"])
+        self.assertEqual([(n["host"], n["declared"], n["evidence"]) for n in label["from_code"]],
+                         [("releases.vendor-metrics.io", False, "scripts/config.js:1")])
+        ui = helpers.load_strings("en")["ui"]
+        self.assertIn("%s: `releases.vendor-metrics.io` (%s)" % (ui["from_code"], ui["undeclared"]),
+                      text)
+        self.assertIn("Named in the code: releases.vendor-metrics.io", summary["terminal"][1])
+        finding = [f for f in report["findings"] if f["rule_id"] == "SR-DF-011"][0]
+        self.assertEqual(finding["named"], ["releases.vendor-metrics.io"])
+        he = helpers.load_strings("he")["ui"]
+        self.assertNotEqual(he["from_code"], ui["from_code"])
+
+    def test_a_collection_service_named_away_from_the_call_is_still_caught(self):
+        summary, report, _ = self.scan("js-named-collector")
+        finding = [f for f in report["findings"] if f["rule_id"] == "SR-DF-014"][0]
+        self.assertEqual((finding["host"], finding["file"]), ("webhook.site", "scripts/settings.js"))
+
+    def test_names_comments_and_tests_are_not_servers(self):
+        summary, report, text = self.scan("code-names-no-server")
+        self.assertEqual(report["label"]["from_code"], [])
+        self.assertNotIn(helpers.load_strings("en")["ui"]["from_code"], text)
+
+    def test_other_languages_and_host_settings(self):
+        with helpers.Workspace() as ws:
+            target = ws.join("fx")
+            files = {
+                "SKILL.md": fixtures.skill_md("lookup", fixtures.DESC, "Run `python3 run.py`."),
+                "run.py": "API = \"https://api.vendor-metrics.io/v2\"\n\n\ndef main():\n    return 1\n",
+                "client.rb": "OPTS = { host: 'queue.vendor-metrics.io', port: 443 }\n",
+                "notes.sh": "#!/bin/sh\n# see https://docs.vendor-metrics.io/setup\necho ready\n",
+                "sock.js": "const AGENT = 'http://local-agent.sock/v1';\n",
+            }
+            for rel, body in files.items():
+                path = os.path.join(target, rel)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w", encoding="utf-8") as handle:
+                    handle.write(body)
+            summary, report, _ = helpers.scan_inline(target, ws.join("out"))
+            self.assertEqual(sorted(n["host"] for n in report["label"]["from_code"]),
+                             ["api.vendor-metrics.io", "queue.vendor-metrics.io"])
+
+    def test_the_wider_net_is_not_cast_over_minified_lines(self):
+        with helpers.Workspace() as ws:
+            for name, line in (("plain", "export const open = (u) => new WebSocket(u);\n"),
+                               ("minified", "var a=1;" * 400 + "new WebSocket(u);\n")):
+                target = ws.join(name)
+                os.makedirs(os.path.join(target, "scripts"))
+                with open(os.path.join(target, "SKILL.md"), "w", encoding="utf-8") as handle:
+                    handle.write(fixtures.skill_md("sock", fixtures.DESC,
+                                                   "Talks over the network. See scripts/s.js."))
+                with open(os.path.join(target, "scripts", "s.js"), "w", encoding="utf-8") as handle:
+                    handle.write(line)
+                summary, report, _ = helpers.scan_inline(target, ws.join("out-" + name))
+                self.assertEqual(report["label"]["network_dynamic"], name == "plain", name)
+
+
+class CapabilitiesFile(unittest.TestCase):
+    """A capabilities file is written by other people. Whatever its shape,
+    the scan must finish."""
+
+    def test_another_form_is_read_as_far_as_it_can_be(self):
+        with helpers.Workspace() as ws:
+            target = fixtures.build("decl-other-shape", ws.join("fx"))
+            summary, report, _ = helpers.scan_inline(target, ws.join("out"), "en")
+            self.assertEqual([(n["host"], n["declared"], n["declared_by"])
+                              for n in report["label"]["network"]],
+                             [("status.vendor-metrics.io", True, "capabilities")])
+            self.assertEqual(report["label"]["declared_writes"], ["~/.cache/x"])
+            finding = [f for f in report["findings"] if f["rule_id"] == "SR-DF-012"][0]
+            self.assertEqual(finding["sub"], "shape")
+            for field in ("network", "writes_outside_skill_dir", "subprocess"):
+                self.assertIn(field, finding["snippet"])
+
+    def test_no_shape_stops_the_scan(self):
+        import contract
+        odd = [1, 1.5, True, False, None, "text", "", [], [1, [2], None, "ok", {"host": "h.io"}],
+               {}, {"value": True}, {"value": 0, "names": "x"}, {"a": {"b": ["deep"]}},
+               {"hosts": [1, 2, {"host": 5}, "a.vendor-metrics.io"]}, [[["x"]]], {"note": None}]
+        for value in odd:
+            items, plain = contract._as_list(value)
+            self.assertIsInstance(items, list)
+            self.assertTrue(all(isinstance(item, (str, dict)) for item in items), value)
+        with helpers.Workspace() as ws:
+            for index, value in enumerate(odd):
+                target = ws.join("fx-%d" % index)
+                os.makedirs(target)
+                with open(os.path.join(target, "SKILL.md"), "w", encoding="utf-8") as handle:
+                    handle.write(fixtures.skill_md("odd", fixtures.DESC, "Nothing to run."))
+                with open(os.path.join(target, "skill-capabilities.json"), "w") as handle:
+                    json.dump({key: value for key in ("network",) + contract.LISTED}, handle)
+                summary, report, _ = helpers.scan_inline(target, ws.join("out-%d" % index), "en")
+                self.assertNotIn("SR-FAIL-CLOSED", helpers.rule_ids(report), value)
+                self.assertIn(summary["internal"], ("approve", "approve_with_notes"), value)
 
 
 if __name__ == "__main__":

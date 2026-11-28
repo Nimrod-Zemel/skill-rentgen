@@ -723,7 +723,8 @@ def adopt(target, lang, out_dir, home, accept_caution, source, runner=None, how=
 
 def package(root, name, wanted, out_dir):
     """Write exactly the scanned files as one file a person can install:
-    <name>.skill for a skill, <name>.plugin for a plugin. The file is read
+    <name>.zip for a skill (the folder at its root, the form Claude's own
+    upload takes), <name>.plugin for a plugin. The file is read
     back and every member is compared with the hash from the scan.
     Returns the path, or None when the folder is neither."""
     is_plugin = os.path.isfile(os.path.join(root, ".claude-plugin", "plugin.json"))
@@ -731,7 +732,7 @@ def package(root, name, wanted, out_dir):
         return None
     prefix = "" if is_plugin else name + "/"
     os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, name + (".plugin" if is_plugin else ".skill"))
+    path = os.path.join(out_dir, name + (".plugin" if is_plugin else ".zip"))
     try:
         with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
             for rel in sorted(wanted):
@@ -1141,7 +1142,7 @@ def main(argv):
     add_cmd.add_argument("--replace", action="store_true", help="replace a skill of the same name")
     add_cmd.add_argument("--as-file", action="store_true",
                          help="do not install here: write exactly the scanned files as one "
-                              ".skill or .plugin file to install. This is what happens by "
+                              ".zip (a skill) or .plugin file to install. This is what happens by "
                               "itself on a machine that does not keep its disk")
     baseline_cmd = commands.add_parser(
         "baseline", help="check everything installed that has no record yet, and record what passes")
@@ -1162,7 +1163,10 @@ def main(argv):
     export_cmd.add_argument("--to", metavar="FILE", help="default: ./skill-rentgen-report/%s"
                             % registry.CARRY_NAME)
     import_cmd = registry_actions.add_parser("import", help="take approvals from such a file")
-    import_cmd.add_argument("file")
+    import_cmd.add_argument("file", nargs="?")
+    import_cmd.add_argument("--find", action="store_true",
+                            help="look for the kept file among the project's documents and the "
+                                 "user's attachments, and load it when there is exactly one")
     import_cmd.add_argument("--replace", action="store_true",
                             help="drop what is here first, instead of keeping the newer record")
     where_cmd = registry_actions.add_parser("where", help="say where the registry is and what it holds")
@@ -1287,8 +1291,19 @@ def main(argv):
                   "Load it elsewhere with: registry import <file>")
             return 0
         if args.action == "import":
+            source_file = args.file
+            if not source_file:
+                found = registry.find_carry() if args.find else []
+                if len(found) != 1:
+                    for path in found:
+                        print("Found: %s" % path)
+                    raise ToolError("no kept registry file was found; give the file" if not found
+                                    else "more than one kept registry file was found; give the one "
+                                         "to load" if args.find else "give the file, or use --find")
+                source_file = found[0]
+                print("Found: %s" % source_file)
             try:
-                result = registry.import_data(home, registry.read_carry(args.file), args.replace)
+                result = registry.import_data(home, registry.read_carry(source_file), args.replace)
             except ValueError as error:
                 raise ToolError("nothing was taken: %s" % error)
             print("Taken: %d approvals written %s. Kept %d newer records that were already here."
@@ -1314,8 +1329,11 @@ def main(argv):
         lang = getattr(args, "lang", None) or settings.get("lang") or "he"
         if (args.command in ("check", "list", "baseline") and not getattr(args, "hook", False)
                 and registry.short_lived() and not os.path.isfile(registry.registry_path(home))):
-            sys.stderr.write("No registry in this session yet. If you kept a registry file from an "
-                             "earlier session, load it first: registry import <file>\n")
+            kept = registry.find_carry()
+            sys.stderr.write("No registry in this session yet. " + (
+                "A kept registry file is here: %s. Load it first: registry import --find\n" % kept[0]
+                if kept else "If you kept a registry file from an earlier session, load it "
+                             "first: registry import <file>\n"))
     if args.command == "notify":
         data = registry.load(home)
         if args.clear:

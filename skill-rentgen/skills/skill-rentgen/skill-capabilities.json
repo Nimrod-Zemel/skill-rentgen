@@ -26,7 +26,7 @@
   "bin": [],
   "modules": [],
   "writes_outside_skill_dir": [
-    "./skill-rentgen-report/ in the folder you run it from, or the folder given with --out: the reports, and, on a machine that does not keep its disk, the registry as one small file and the scanned skill as one .skill or .plugin file",
+    "./skill-rentgen-report/ in the folder you run it from, or the folder given with --out: the reports, and, on a machine that does not keep its disk, the registry as one small file and the scanned skill as one .zip or .plugin file",
     "~/.skill-rentgen/registry.json and state.json, or the folder named in SKILL_RENTGEN_HOME: the record of what you approved, and when it was last checked",
     "~/.claude/skills/<name>/ or ./.claude/skills/<name>/: only the add command, only a skill that passed the scan, and only the bytes that were scanned",
     "./.claude/settings.local.json: only the block and unblock commands, only with --yes, and only the two deny rules for the skill you name",

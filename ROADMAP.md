@@ -51,7 +51,9 @@ Gate before calling part B finished: ten skills approved on three machines for t
 | What | State |
 | --- | --- |
 | The trial run where Docker is installed and not running (`--start-engine`), and with no image download (the machine's own programs, read-only, Linux only) | Built. Tested on a real container engine |
-| The trial run in a container | Built. Tested with this repository's own test skills, on a real container engine in CI and on a stand-in elsewhere. **Not yet calibrated on the known-good corpus**: that run starts other people's code and is done only in a real container, by `.github/workflows/calibration.yml` |
+| The trial run on the known-good corpus | Done on 28 November in a real container: no red line, three cautions that are also cautions in the scan |
+| Servers named in code, and a JavaScript constant tied to its call in the same file | Built. Calibrated on the corpus |
+| The trial run in a container | Built. Tested with this repository's own test skills, on a real container engine in CI and on a stand-in elsewhere, and calibrated on the known-good corpus. `.github/workflows/calibration.yml` repeats that run |
 | The agent trial pack for cowork-harness, and the reader of its result | Built. The scenario and session are checked against the harness's published schemas. **Not yet run end to end**: that needs the harness, Docker, a Claude login, and for the virtual-machine tier a Mac with Apple silicon |
 | `inventory --doctor`, through claude-plugin-doctor | Built against its documented output. **Not yet run against the real program**, which works on macOS only |
 | `declare`, SARIF, the HTML report | Built |

@@ -45,6 +45,51 @@
   "persist": ["launchctl", "crontab", "systemctl", "defaults"],
   "keychain": ["security", "secret-tool", "pass", "op"]
  },
+ "runtimes_why": "These tools install packages and also run local code. Only the listed first words install. Anything else is the tool used to run code, and the sandbox does not have it.",
+ "runtimes": {
+  "bun": [
+   "install",
+   "i",
+   "add",
+   "x",
+   "create",
+   "update",
+   "upgrade",
+   "link",
+   "pm"
+  ],
+  "deno": [
+   "install",
+   "add",
+   "cache",
+   "upgrade",
+   "compile",
+   "run"
+  ]
+ },
+ "fetch_and_run_why": "A container engine asked to fetch or start an image is judged like a package installer. Any other use of it is a change to the system.",
+ "fetch_and_run": {
+  "docker": [
+   "run",
+   "pull",
+   "create",
+   "compose",
+   "build"
+  ],
+  "podman": [
+   "run",
+   "pull",
+   "create",
+   "compose",
+   "build"
+  ]
+ },
+ "disclosure_why": "Words in a skill's own documents that say it reads one kind of sensitive file. When they are there, reading that kind is a note and not a caution. Secrets have no such words: reading one is a red line whatever the documents say.",
+ "disclosure": {
+  "conversation": "transcripts?\\b|\\bsession (?:logs?|files?|history|records?|data)\\b|\\bpast sessions\\b|\\bconversation (?:history|logs?|records?)\\b|\\bchat history\\b|~/\\.claude/projects",
+  "shell-history": "\\bshell history\\b|\\bcommand history\\b|bash_history|zsh_history",
+  "project-keys": "\\.env\\b"
+ },
  "persist_paths": ["Library/LaunchAgents/", "Library/LaunchDaemons/", ".config/autostart/", ".config/systemd/",
                    ".config/fish/", ".bash_profile", ".zprofile", ".zshenv", ".bash_login", ".claude/skills/",
                    ".claude/hooks/", ".claude/CLAUDE.md", ".claude/settings", ".claude/plugins/", ".claude/agents/",

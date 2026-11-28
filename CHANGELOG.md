@@ -30,10 +30,22 @@ A machine that starts empty every time (a cloud session):
 - `scan`, `add` and `trial` take `--copy FOLDER` with a GitHub address: the repository is read from a copy already on disk and nothing is downloaded. The copy's origin and version are checked from its `.git` text files; git is never started.
 - `trial --start-engine`: when Docker is installed and its service is not running, start it for one run and stop it afterwards. Linux, as root.
 - A trial needs no image download on Linux: when the default image cannot be had, the container gets the machine's own program folders, each one read-only.
-- `add` writes exactly the scanned files as one `.skill` or `.plugin` file instead of installing, and `add --as-file` does that anywhere.
+- `add` writes exactly the scanned files as one file instead of installing, and `add --as-file` does that anywhere.
 - `registry export`, `registry import` and `registry where`: the registry as one small file to keep between sessions. `SKILL_RENTGEN_HOME` moves the registry folder.
 - `inventory`, `baseline` and `check` also see the skills and plugins that an account brings into a cloud session.
 - `check <name>` with a name that matches nothing is an error, not a quiet "nothing changed".
+
+After the first runs on real skills (28 November):
+
+- The label has a new line: servers that the code names in a string and that no call was tied to. In JavaScript and TypeScript a constant that holds an address is tied to the call that uses it in the same file, also through a template string.
+- A throwaway collection service or a raw IP address that is only named in the code is caught by the same rules as one that is called.
+- The trial was run on the known-good corpus in a real container. Three rules came out of it: SR-TR-011 (an installer where you can see it coming), SR-TR-012 (reading sensitive files that the documents say are read) and SR-TR-013 (opening a web page). A tool used to run local code is no longer counted as an installer.
+- A capabilities file in another form no longer stops the scan. It is read as far as it can be and the report names the fields that are not lists.
+- The output of a child process is no longer treated as the environment it was given.
+- `docker run -e KEY=value image:tag` is read correctly when checking that an image is pinned.
+- `add` on a machine that does not keep its disk writes a skill as a `.zip`, the form Claude's own upload takes.
+- `registry import --find` looks for the kept file among the project's documents and the user's attachments, and nowhere else.
+- Rules version 2026.11.2.
 
 For builders:
 

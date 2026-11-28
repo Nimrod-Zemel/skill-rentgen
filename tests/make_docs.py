@@ -3,7 +3,12 @@ the output of real runs, so that no number in the docs is typed by hand.
 
 Usage:
   python3 tests/make_docs.py <calibration.json> <independent.json> <corpus_dir> <cli_seconds>
-          <hook_ms> [<trial_calibration.json>]
+          <hook_ms> [<trial_calibration.json>] [--before <calibration.json>]
+          [--trial-first <trial_calibration.json>]
+
+--before is the calibration from before the last change to the rules, so the
+page can say what that change did. --trial-first is the first run of the
+trial on the corpus, kept so the page can say what it taught.
 """
 from __future__ import annotations
 
@@ -33,9 +38,17 @@ def git(folder, *args):
 
 
 def main():
-    rows, outside = load(sys.argv[1]), load(sys.argv[2])
-    corpus, seconds, hook_ms = sys.argv[3], sys.argv[4], sys.argv[5]
-    trial_rows = load(sys.argv[6]) if len(sys.argv) > 6 else None
+    argv, named = [], {}
+    items = iter(sys.argv[1:])
+    for item in items:
+        if item in ("--before", "--trial-first"):
+            named[item] = load(next(items))
+        else:
+            argv.append(item)
+    rows, outside = load(argv[0]), load(argv[1])
+    corpus, seconds, hook_ms = argv[2], argv[3], argv[4]
+    trial_rows = load(argv[5]) if len(argv) > 5 else None
+    before, trial_first = named.get("--before"), named.get("--trial-first")
     en = load(os.path.join(SKILL, "i18n", "en.json"))
     he = load(os.path.join(SKILL, "i18n", "he.json"))
     rules = []
@@ -128,6 +141,17 @@ def main():
             "- A declared installer. A command that writes into the skills folder is a caution. "
             "When the skill's capabilities file names that folder, it is a note (SR-DF-020). "
             "A component that starts by itself and writes there is a red line either way.",
+            ] + named_section(rows, before) + [
+            "- The capabilities file. It is written by other people, and the first real one in "
+            "another form (objects and booleans where lists are expected) stopped the contract "
+            "stage. It is now read as far as it can be, and the report says which fields are "
+            "not lists (SR-DF-012).",
+            "- A child process and its environment. Copying the environment for a child process "
+            "is routine. The output of that child was also treated as the environment, so a "
+            "version stamp read from `git rev-parse` looked like a dump of every variable "
+            "(SR-DF-018). What is handed over as `env=` now stays with the child.",
+            "- A container command with a setting. `docker run -e KEY=value image:1.2` was read "
+            "as starting an image called `value`. Only a flag is split at its equals sign now.",
             "", "## Shapes taken from published attacks", "",
             "In early 2026, researchers documented skills in a public registry that delivered "
             "an infostealer. The SKILL.md looked harmless. It carried a \"prerequisite\": run a "
@@ -170,25 +194,24 @@ def main():
             category = row["unit"].split("/")[1]
             out.append("| %s | %s | %s |" % (category, en["verdict"][row["verdict"]],
                                              why.get(category, "Not covered")))
+    trial_part = trial_section(trial_rows, trial_first, rows)
     out += ["", "## Our own test skills", "",
             "`tests/fixtures.py` describes %d test skills as data. They are written to disk "
             "only while a test runs. With the three examples, that is %d." % (
                 fixture_count(), fixture_count() + 3), "",
             "## The trial run", "",
             "The trial has %d rules of its own, %d of them red lines, and %d decoy files. "
-            "`tests/test_trial.py` builds six test skills at test time (a thief, a polite hook, "
-            "a hook that never ends, a Node hook, a hook that calls a declared server, and a "
-            "plain skill given one command) and checks that each rule is triggered by one of "
-            "them. Where Docker or Podman answers, the tests run in a real container and also "
+            "`tests/test_trial.py` builds its test skills at test time and checks that each "
+            "rule is triggered by one of them. Where Docker or Podman answers, the tests run in a real container and also "
             "check the fences from inside: no network, nothing writable outside the sandbox, "
             "not root. Elsewhere they run on a stand-in built from Linux namespaces."
             % (len(trial_rules), sum(r["severity"] == "red" for r in trial_rules),
-               len(decoys["home"]) + len(decoys["work"])), ""] + trial_section(trial_rows) + [
+               len(decoys["home"]) + len(decoys["work"])), ""] + trial_part + [
             "## Speed", "",
             "One skill through the real command line, with every stage in its own process: "
             "median %s seconds, measured on every eighth skill and plugin of the corpus (43 of "
-            "341). The largest repository in the corpus, 129 MB, took about half a minute."
-            % seconds, "",
+            "341). The slowest unit, a whole repository, took %d seconds with the stages in one "
+            "process." % (seconds, round(max(r.get("seconds", 0) for r in rows))), "",
             "The check at the start of a session, on an approved skill of 500 files (1.7 MB) "
             "with nothing changed: median %s milliseconds, measured over 15 runs. It compares "
             "size and change time and reads a file only when one of them differs." % hook_ms,
@@ -227,7 +250,39 @@ def main():
         handle.write("\n".join(lines))
 
 
-def trial_section(found):
+def named_section(rows, before):
+    """What listing the servers that code names did on the corpus."""
+    units = [r for r in rows if r["kind"] != "repo"]
+    if not any("named_total" in r for r in units):
+        return []
+    line = ("- Servers named in the code. In JavaScript, TypeScript and shell a call is tied to "
+            "its address when both sit in one file. A server that is only held in a string, or "
+            "used from another file, is listed in the label as named in the code, with no call "
+            "found. XML namespaces, schema ids and licence links are names and are left out. "
+            "On the corpus %d of %d skills and plugins get that line, %d of them with a server "
+            "their documents do not mention." % (
+                sum(1 for r in units if r.get("named_total")), len(units),
+                sum(1 for r in units if r.get("named"))))
+    if before:
+        old = {(r["repo"], r["kind"], r["unit"]): r for r in before}
+        moved = gained = 0
+        for row in rows:
+            was = old.get((row["repo"], row["kind"], row["unit"]))
+            if not was:
+                continue
+            moved += row["verdict"] != was["verdict"]
+            gained += len(row["findings"]) > len(was["findings"])
+        line += (" Against the run before the change: %d of %d units changed verdict, and %d "
+                 "gained a finding, each a call with an address decided at run time that was "
+                 "not seen before." % (moved, len(rows), gained))
+    return [line]
+
+
+def _tally(found):
+    return ", ".join("%s %d" % kv for kv in sorted(found["summary"]["verdicts"].items())) or "none"
+
+
+def trial_section(found, first=None, scan_rows=()):
     """The corpus result of the trial, or the plain statement that there is none yet."""
     if not found:
         return ["**The trial rules have not yet been run against the known-good corpus.** That "
@@ -239,11 +294,30 @@ def trial_section(found):
     ran = [row for row in found["rows"] if row["status"] == "ran"]
     red = sorted({rule for row in ran for rule in row["rules"]
                   if rule in ("SR-TR-001", "SR-TR-002", "SR-TR-004")})
-    return ["Run against the known-good corpus in a %s container: %d units had something to "
-            "start, %d commands were started. Verdicts: %s. Red-line rules seen: %s."
-            % (summary["engine"], summary["ran"], summary["commands"],
-               ", ".join("%s %d" % kv for kv in sorted(summary["verdicts"].items())) or "none",
-               ", ".join(red) or "none"), ""]
+    out = ["Run against the known-good corpus in a %s container: %d of %d units had something "
+           "to start, %d commands were started. Verdicts: %s. Red-line rules seen: %s."
+           % (summary["engine"], summary["ran"], summary["units"], summary["commands"],
+              _tally(found), ", ".join(red) or "none"), ""]
+    if first:
+        out += ["The first run on the corpus gave: %s. No red line, and too many cautions. It "
+                "showed four ordinary things judged as cautions: a tool used to run local code "
+                "(`bun run`) counted as an installer; a package or image pinned to a version, "
+                "and an installer inside a script the user runs, were judged like an unpinned "
+                "download at start; reading session transcripts was a caution even for a plugin "
+                "whose documents say that is its job; and opening a web page counted as "
+                "contacting a server. Rules SR-TR-011, SR-TR-012 and SR-TR-013 and the list of "
+                "runtimes came from that run." % _tally(first), ""]
+    cautious = [row for row in ran if row["verdict"] == "caution"]
+    if cautious:
+        scan = {(r["repo"], os.path.basename(r["unit"])) for r in scan_rows
+                if r["verdict"] == "caution"}
+        names = sorted(os.path.basename(row["path"]) for row in cautious)
+        same = all((row["repo"], os.path.basename(row["path"])) in scan for row in cautious)
+        out += ["The units at caution: %s.%s" % (
+            ", ".join("`%s`" % name for name in names),
+            " Each fetches and starts a package with no version when it starts, and each is "
+            "also a caution in the scan." if same else ""), ""]
+    return out
 
 
 def fixture_count():

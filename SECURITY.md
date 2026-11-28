@@ -2,7 +2,7 @@
 
 ## Status
 
-Pre-release. The scan rules were calibrated on 25 November 2026 against the corpus in [docs/calibration.md](docs/calibration.md). The trial rules have been run on this repository's own test skills only; they have not yet been calibrated on that corpus. No outside party has audited this tool. CI runs the tests on Linux and macOS, with Python 3.9 and 3.13; on Linux the trial tests run in Docker. Windows has not been tried. Treat its verdict as one careful opinion, not as proof.
+Pre-release. The scan rules and the trial rules were calibrated on 28 November 2026 against the corpus in [docs/calibration.md](docs/calibration.md). The trial was run on that corpus once, on one machine, in a container that used the machine's own programs. No outside party has audited this tool. CI runs the tests on Linux and macOS, with Python 3.9 and 3.13; on Linux the trial tests run in Docker. Windows has not been tried. Treat its verdict as one careful opinion, not as proof.
 
 ## What this tool is for
 
@@ -85,6 +85,10 @@ On a machine whose disk does not last, the registry is also written as one small
 1. Anyone who can write to that place can add an approval. A project that several people can write to is such a place.
 2. An approval is a path and one hash. It does not make a skill pass a scan. It makes `check` stay quiet about files that match the hash.
 3. The instructions tell the agent to load a registry file only from the project's own documents or from the user, and never from inside a skill or a repository being checked.
+
+## What "named in the code" means
+
+A server on the line "named in the code, with no call to them found" was seen as a string in a code file. The tool did not see a call to it. It may be called from another file or through a helper, or it may never be called. Read the line as "the code knows this address", not as "the code talks to this server". Outside Python the tool reads patterns, not a syntax tree, so the absence of a server from both lines does not prove the code calls nobody: an address can be built from pieces at run time.
 
 ## Residual risks
 

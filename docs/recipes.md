@@ -61,7 +61,7 @@ python3 skill_rentgen.py registry export --to skill-rentgen-registry.json
 python3 skill_rentgen.py registry import skill-rentgen-registry.json
 ```
 
-`add` in such a session writes `<name>.skill` or `<name>.plugin` into the report folder instead of installing.
+`add` in such a session writes `<name>.zip` (a skill) or `<name>.plugin` into the report folder instead of installing. `registry import --find` loads a registry file kept among the project's documents.
 
 ## Check before every commit
 

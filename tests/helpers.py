@@ -86,5 +86,11 @@ def run_hook(*args, home=None, env=None):
     return proc.returncode, proc.stdout.decode("utf-8", "replace"), proc.stderr.decode("utf-8", "replace")
 
 
+def load_strings(lang):
+    """The report strings of one language."""
+    with open(os.path.join(SKILL, "i18n", lang + ".json"), encoding="utf-8") as handle:
+        return json.load(handle)
+
+
 def rule_ids(report):
     return sorted({item["rule_id"] for item in report["findings"]})

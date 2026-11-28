@@ -35,7 +35,7 @@ The skill does what it says, and nothing in it needs your attention.
 - Analysis depth: Python by AST: 1 files. Patterns only: 0. Not analysed: 0.
 - the skill ships no capabilities file (this is not held against it)
 - Fingerprints: `fb68c609cee49cec0ebca98f8579b758b0f3b2040c6077d61dd8bf4289ebb7f6` (sha256-filemap-v1)
-- Files scanned: 2. skill-rentgen 0.1.0, rules version 2026.11.1. Install tier A: Python only, no network
+- Files scanned: 2. skill-rentgen 0.1.0, rules version 2026.11.2. Install tier A: Python only, no network
 
 </details>
 

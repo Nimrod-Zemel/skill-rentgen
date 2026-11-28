@@ -58,18 +58,18 @@ On your own computer, and in a cloud session where the machine starts empty ever
 | --- | --- | --- |
 | A GitHub address | Downloaded from GitHub | Where the download host is closed, the agent brings the repository in with the session's own tool for repositories, and the scan reads that copy (`--copy`) |
 | The trial run | Docker Desktop, OrbStack or Podman, running | Docker is usually installed and not running: `--start-engine` starts it for one run and stops it. No image is downloaded: the container gets the machine's own program folders, read-only |
-| `add` | Installs into `~/.claude/skills` | Writes exactly the scanned files as one `.skill` or `.plugin` file, for you to install |
-| The registry | `~/.skill-rentgen` | Also written as one small file to keep between sessions. `registry import` loads it |
+| `add` | Installs into `~/.claude/skills` | Writes exactly the scanned files as one file for you to install: a `.zip` for a skill, a `.plugin` for a plugin |
+| The registry | `~/.skill-rentgen` | Also written as one small file to keep between sessions. `registry import --find` loads it |
 | What is installed | Skill folders and Claude Code plugins | Also the skills and plugins your account brings into the session |
 
-The cloud column was run on 26 November 2026 in a Claude cloud session, with this repository's own test skills and with public repositories that were already on its disk. Keeping the registry file between sessions is a step the agent does by following the skill's instructions; that step has not been watched from end to end.
+The cloud column was run on 26 and 28 November 2026 in a Claude cloud session. The trial was run there on this repository's test skills and on the known-good corpus. The registry file was saved as a project document, read back and loaded into an empty registry. That was done in one session: saving and loading it across two chats is a step the agent does by following the skill's instructions, and that step has not been watched.
 
 ## The four things it does
 
 | What | How |
 | --- | --- |
 | Promise against code | Finds statements such as "works offline", "read-only" and "no data leaves your machine" in the docs and checks them against what the code does. A plain contradiction is a red line |
-| What runs on its own, and where data goes | Lists every hook, MCP server, in-process module and `bin/` command, when each one runs, which servers the code contacts, which secrets it reads and where it writes. Python is read as a syntax tree. What a hook starts is followed through the scripts it runs and the modules it imports |
+| What runs on its own, and where data goes | Lists every hook, MCP server, in-process module and `bin/` command, when each one runs, which servers the code contacts, which secrets it reads and where it writes. Python is read as a syntax tree. In JavaScript, TypeScript and shell a call is tied to its address when both sit in one file; a server that the code only holds in a string is listed separately, as named in the code. What a hook starts is followed through the scripts it runs and the modules it imports |
 | See it before you install it, twice | **In a clean chat:** a page that quotes the skill's instructions, with invisible characters removed, to paste into a chat with no tools. **In a sealed container:** `trial` starts what the skill starts by itself, with no network and decoy secrets in place of yours, and reports what it reached for. For the instructions themselves there is a pack that runs them with a real agent inside [cowork-harness](https://github.com/yaniv-golan/cowork-harness) |
 | Approve, then be told when it changes | Records a hash of every file you approved. `add` installs exactly the bytes that were scanned. A check tells an update from tampering, lists what was added, removed or changed, and watches the settings keys that decide what runs by itself. As a plugin it checks at the start of every session and prints one line only when something changed |
 
@@ -94,25 +94,27 @@ TRIAL  DO NOT INSTALL  3 started, 11 seen
 
 - It needs Docker or Podman. With neither installed it says "not checked" and starts nothing. With Docker installed and not running it says so; `--start-engine` lets the tool start Docker's service for one run and stop it afterwards (Linux, as root). It never falls back to running on your computer.
 - The sandbox image is `python:3.12-slim`. On Linux, when that image is not on the machine and cannot be fetched, the container gets the machine's own program folders instead (`/usr` and the like), each one read-only, and no folder that holds anything personal. The report says which was used.
-- The verdict of a trial comes from ten rules of its own, three of them red lines.
+- The verdict of a trial comes from thirteen rules of its own, three of them red lines.
 - A trial is evidence of what was seen in one run. It is not evidence that a skill is safe, and every report says what the run does not show.
 
 ## Measured
 
-Numbers from 25 November 2026. The method, the corpus and every caution are in [docs/calibration.md](docs/calibration.md).
+Numbers from 28 November 2026. The method, the corpus and every caution are in [docs/calibration.md](docs/calibration.md).
 
 | Test | Result |
 | --- | --- |
 | 341 well-regarded skills and plugins from nine public repositories, scanned | 0 red lines, 0 "do not install". 6 "caution" (1.8%), each one listed with its reason |
-| 99 test skills of our own: known-bad, evasions, hostile inputs, near misses, and shapes taken from published attacks | All end in the verdict they were written for |
+| 106 test skills of our own: known-bad, evasions, hostile inputs, near misses, and shapes taken from published attacks | All end in the verdict they were written for |
 | 29 labelled cases from Cisco's skill-scanner evaluation set, written by others | 10 of 17 unsafe cases flagged. 0 of 12 safe cases flagged |
-| Time for one skill, real command line | Median 2.7 seconds |
-| The session check on a skill of 500 files, nothing changed | Median 72 milliseconds |
-| The trial run, on six test skills of our own | Every one of the ten trial rules is triggered by one of them, and a hook that only reads its own settings stays quiet |
+| Time for one skill, real command line | Median 2.14 seconds |
+| The session check on a skill of 500 files, nothing changed | Median 52 milliseconds |
+| The trial run, on test skills of our own | Every one of the thirteen trial rules is triggered by one of them, and a hook that only reads its own settings stays quiet |
+| The trial run, on the same corpus, in a real container | 78 of 350 units had something to start. 61 quiet, 14 with notes, 3 "caution", 0 red lines. The three are also a caution in the scan |
+| Servers named in code, on the corpus | 21 of 341 skills and plugins get the line, 7 with a server their documents do not mention. No verdict changed |
 
 Of the 7 unsafe cases it does not flag, five belong to classes this tool does not check (flaws inside a skill's own code, and harmful content), and two use placeholder values that the tool ignores on purpose (a reserved domain, a dummy key).
 
-The trial's rules have not yet been run against the known-good corpus. That run starts other people's code, so it is done only in a real container, by the calibration workflow in this repository.
+The trial's rules were run against the known-good corpus once, on one machine. That run starts other people's code, so it is done only in a real container. The calibration workflow in this repository repeats it.
 
 ## What it does not do
 

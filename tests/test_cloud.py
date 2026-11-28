@@ -248,22 +248,22 @@ class CloudSession(unittest.TestCase):
             code, text, err = helpers.run_cli("add", GOOD, "--out", out, home=home, env=CLOUD)
             self.assertEqual(code, 0, text + err)
             self.assertIn("CLAUDE_CODE_REMOTE", text)
-            self._members(os.path.join(out, "meeting-notes.skill"), "meeting-notes/", GOOD)
+            self._members(os.path.join(out, "meeting-notes.zip"), "meeting-notes/", GOOD)
             self.assertFalse(os.path.exists(os.path.join(home, ".claude")))
             self.assertFalse(os.path.exists(os.path.join(home, ".skill-rentgen", "registry.json")))
-            first = open(os.path.join(out, "meeting-notes.skill"), "rb").read()
+            first = open(os.path.join(out, "meeting-notes.zip"), "rb").read()
             helpers.run_cli("add", GOOD, "--out", out, home=home, env=CLOUD)
-            self.assertEqual(first, open(os.path.join(out, "meeting-notes.skill"), "rb").read())
+            self.assertEqual(first, open(os.path.join(out, "meeting-notes.zip"), "rb").read())
             # What a scan refuses is never packaged, and caution needs a yes.
             self.assertEqual(helpers.run_cli("add", BAD, "--out", out, home=home, env=CLOUD)[0], 2)
             self.assertEqual(helpers.run_cli("add", BAD, "--out", out, "--accept-caution",
                                              home=home, env=CLOUD)[0], 2)
             self.assertEqual(helpers.run_cli("add", WARN, "--out", out, home=home, env=CLOUD)[0], 1)
-            self.assertEqual([n for n in os.listdir(out) if n.endswith((".skill", ".plugin"))],
-                             ["meeting-notes.skill"])
+            self.assertEqual([n for n in os.listdir(out) if n.endswith((".zip", ".plugin"))],
+                             ["meeting-notes.zip"])
             self.assertEqual(helpers.run_cli("add", WARN, "--out", out, "--accept-caution",
                                              home=home, env=CLOUD)[0], 0)
-            self.assertTrue(os.path.isfile(os.path.join(out, "lead-enricher.skill")))
+            self.assertTrue(os.path.isfile(os.path.join(out, "lead-enricher.zip")))
             # A plugin becomes a .plugin file with the same layout it had.
             plugin = ws.join("demo")
             shutil.copytree(GOOD, os.path.join(plugin, "skills", "meeting-notes"))
@@ -277,13 +277,13 @@ class CloudSession(unittest.TestCase):
             write(os.path.join(loose, "notes.md"), "# notes\n")
             code, text, _ = helpers.run_cli("add", loose, "--out", out, home=home, env=CLOUD)
             self.assertEqual(code, 10)
-            self.assertFalse(os.path.exists(os.path.join(out, "loose.skill")))
+            self.assertFalse(os.path.exists(os.path.join(out, "loose.zip")))
             # On a machine that keeps its disk the same thing is there on request,
             # and a project folder is still a place to install into.
             other = ws.join("other-out")
             self.assertEqual(helpers.run_cli("add", GOOD, "--as-file", "--out", other,
                                              home=home)[0], 0)
-            self.assertTrue(os.path.isfile(os.path.join(other, "meeting-notes.skill")))
+            self.assertTrue(os.path.isfile(os.path.join(other, "meeting-notes.zip")))
             self.assertFalse(os.path.exists(os.path.join(home, ".claude")))
             project = ws.join("project")
             os.makedirs(project)
@@ -347,6 +347,44 @@ class CloudSession(unittest.TestCase):
             record = list(read_json(os.path.join(third, ".skill-rentgen",
                                                  "registry.json"))["skills"].values())[0]
             self.assertEqual((record["files"], len(record["tree"])), ({}, 64))
+
+    def test_the_kept_file_is_looked_for_only_where_it_may_be(self):
+        import registry
+        with helpers.Workspace() as ws:
+            project, uploads, here = ws.join("project"), ws.join("uploads"), ws.join("here")
+            for folder in (project, uploads, here):
+                os.makedirs(folder)
+            skill, out, home = ws.join("mn"), ws.join("out"), ws.join("home")
+            shutil.copytree(GOOD, skill)
+            os.makedirs(home)
+            helpers.run_cli("adopt", skill, "--out", out, home=home, env=CLOUD)
+            carry = os.path.join(out, "skill-rentgen-registry.json")
+            places = dict(registry.rule_file("places.json"))
+            saved = registry.rule_file
+
+            def with_places(name):
+                return dict(places, carry_read=[project, uploads]) if name == "places.json" \
+                    else saved(name)
+            registry.rule_file = with_places
+            try:
+                self.assertEqual(registry.find_carry(), [])
+                # A file in the folder the tool runs in is never looked at.
+                shutil.copy(carry, os.path.join(here, "skill-rentgen-registry.json"))
+                self.assertEqual(registry.find_carry(), [])
+                # A project document keeps its name at the end of the file name.
+                kept = os.path.join(project, "claude_skill-rentgen-registry.json")
+                shutil.copy(carry, kept)
+                os.symlink(carry, os.path.join(uploads, "linked-skill-rentgen-registry.json"))
+                self.assertEqual(registry.find_carry(), [kept])
+            finally:
+                registry.rule_file = saved
+        # The real list names two folders, and neither is a relative one.
+        folders = registry.rule_file("places.json")["carry_read"]
+        self.assertTrue(folders and all(os.path.isabs(folder) for folder in folders))
+        code, text, err = helpers.run_cli("registry", "import", "--find")
+        self.assertEqual(code, 10)
+        self.assertIn("no kept registry file", err)
+        self.assertEqual(helpers.run_cli("registry", "import")[0], 10)
 
     def test_a_file_that_is_not_a_sound_registry_is_not_taken(self):
         import registry

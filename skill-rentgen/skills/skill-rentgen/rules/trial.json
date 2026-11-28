@@ -1,5 +1,5 @@
 {
- "rules_version": "2026.11.1",
+ "rules_version": "2026.11.2",
  "note": "Rules for the trial run. They describe what a skill's own commands did inside the sandbox, not what its files contain.",
  "rules": [
   {
@@ -61,6 +61,27 @@
    "severity": "high",
    "status": "active",
    "about": "administrator rights, desktop scripting, quarantine removal or a container engine were asked for"
+  },
+  {
+   "id": "SR-TR-011",
+   "severity": "medium",
+   "status": "active",
+   "about": "an installer was called where a user can see it coming: a package or image pinned to a version at start, or an installer inside a script the docs point to",
+   "calibration": "calibration: on the known-good corpus SR-TR-005 was a caution for a pinned container image and for a project-setup script that the docs tell the user to run"
+  },
+  {
+   "id": "SR-TR-012",
+   "severity": "medium",
+   "status": "active",
+   "about": "project keys, shell history or the conversation record were read, and the skill's own documents say it reads them",
+   "calibration": "calibration: two official plugins exist to analyse session transcripts and say so; SR-TR-006 made both a caution"
+  },
+  {
+   "id": "SR-TR-013",
+   "severity": "medium",
+   "status": "active",
+   "about": "a web page was opened in the browser",
+   "calibration": "calibration: a setup wizard that opens a dashboard page was reported as contacting an undeclared server"
   }
  ]
 }

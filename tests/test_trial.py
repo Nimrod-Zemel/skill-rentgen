@@ -279,6 +279,79 @@ class Behaviour(unittest.TestCase):
                 self.assertIn("SR-TR-001", text)
                 self.assertNotIn("SR-DECOY-", text)
 
+    def test_a_runtime_is_not_an_installer(self):
+        # `bun run` starts local code. The sandbox has no bun, and says so.
+        with helpers.Workspace() as work:
+            record = trial_of(work, plugin({"SessionStart": "bun run --silent start"}),
+                              scripts=False)
+            found = [(f["rule_id"], f.get("sub"), f["snippet"]) for f in record["findings"]]
+            self.assertEqual(found, [("SR-TR-009", "missing", "bun")], record)
+            self.assertEqual((record["verdict"], record["exit_code"]), ("quiet", 0))
+        with helpers.Workspace() as work:
+            record = trial_of(work, plugin({"SessionStart": "bun install"}), scripts=False)
+            self.assertEqual((rules_of(record), record["verdict"]), (["SR-TR-005"], "caution"))
+
+    def test_a_pinned_package_at_start_is_a_note_and_a_loose_one_a_caution(self):
+        cases = (("npx -y some-tool@1.4.2 serve", "SR-TR-011", "notes"),
+                 ("npx -y some-tool@latest serve", "SR-TR-005", "caution"),
+                 ("npx some-tool", "SR-TR-005", "caution"),
+                 ("docker run -i --rm -e TOKEN=x vendor/server:0.4.0", "SR-TR-011", "notes"),
+                 ("docker run -i --rm vendor/server", "SR-TR-005", "caution"),
+                 ("docker pull vendor/server:0.4.0", "SR-TR-005", "caution"),
+                 ("docker ps", "SR-TR-010", "caution"),
+                 ("pip install requests==2.32.0", "SR-TR-005", "caution"))
+        for command, rule, verdict in cases:
+            with helpers.Workspace() as work:
+                record = trial_of(work, plugin({"SessionStart": command}), scripts=False)
+                self.assertEqual((rules_of(record), record["verdict"]), ([rule], verdict), command)
+                Behaviour.seen |= set(rules_of(record))
+                if rule == "SR-TR-011":
+                    self.assertEqual(record["findings"][0]["sub"], "pinned")
+
+    def test_an_installer_inside_a_script_you_run_is_a_note(self):
+        files = {"SKILL.md": "---\nname: starter\ndescription: Starter. Use when asked.\n---\n"
+                             "# Starter\n\nRun `bash scripts/setup.sh` to create the project.\n",
+                 "scripts/setup.sh": "#!/bin/bash\nnpm install left-pad\necho done\n"}
+        with helpers.Workspace() as work:
+            record = trial_of(work, files)
+            hit = [f for f in record["findings"] if f["rule_id"] == "SR-TR-011"]
+            self.assertEqual([(f["sub"], f["snippet"]) for f in hit],
+                             [("script", "npm install left-pad")], record["findings"])
+            self.assertEqual((record["verdict"], record["exit_code"]), ("notes", 0))
+            for lang in ("he", "en"):
+                self.assertIn(trial.strings(lang)[1]["SR-TR-011"]["title"],
+                              trial.render(record, lang))
+
+    def test_reading_what_the_documents_say_is_read(self):
+        reader = {"hooks/read.sh": "#!/bin/bash\ncat ~/.claude/projects/trial/transcript.jsonl "
+                                   "> /dev/null\n"}
+        hook = {"SessionStart": "bash %s/hooks/read.sh" % ROOT}
+        with helpers.Workspace() as work:
+            record = trial_of(work, plugin(hook, reader), scripts=False)
+            self.assertEqual((rules_of(record), record["verdict"]), (["SR-TR-006"], "caution"))
+        said = dict(reader)
+        said["README.md"] = "# Demo\n\nThis plugin summarises your session transcripts.\n"
+        with helpers.Workspace() as work:
+            record = trial_of(work, plugin(hook, said), scripts=False)
+            self.assertEqual((rules_of(record), record["verdict"]), (["SR-TR-012"], "notes"))
+            self.assertEqual(record["findings"][0]["sub"], "conversation")
+            Behaviour.seen |= set(rules_of(record))
+        # Saying so does not make a secret readable.
+        thief = {"hooks/read.sh": "#!/bin/bash\ncat ~/.ssh/id_rsa > /dev/null\n",
+                 "README.md": "# Demo\n\nThis plugin reads your ssh key and your session "
+                              "transcripts.\n"}
+        with helpers.Workspace() as work:
+            record = trial_of(work, plugin(hook, thief), scripts=False)
+            self.assertEqual((rules_of(record), record["verdict"]), (["SR-TR-001"], "blocked"))
+
+    def test_opening_a_web_page_is_not_contacting_a_server(self):
+        hook = {"SessionStart": "xdg-open https://dashboard.vendor-metrics.io/test/apikeys"}
+        with helpers.Workspace() as work:
+            record = trial_of(work, plugin(hook), scripts=False)
+            self.assertEqual((rules_of(record), record["verdict"]), (["SR-TR-013"], "notes"))
+            self.assertEqual(record["findings"][0]["host"], "dashboard.vendor-metrics.io")
+            Behaviour.seen |= set(rules_of(record))
+
     def test_a_polite_hook_stays_quiet(self):
         with helpers.Workspace() as work:
             record = trial_of(work, QUIET)

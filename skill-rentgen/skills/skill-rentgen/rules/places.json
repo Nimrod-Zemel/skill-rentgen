@@ -14,6 +14,8 @@
   "containers": [
     "synced"
   ],
+  "carry_read_why": "Folders where a kept registry file may be looked for: the documents of the project a session belongs to, and the files the user attached. Never the folder being scanned and never the current folder: a registry file found there could approve the skill it came with.",
+  "carry_read": ["/mnt/project", "/mnt/user-data/uploads"],
   "short_lived_env": [
     "SKILL_RENTGEN_SHORT_LIVED",
     "CLAUDE_CODE_REMOTE",

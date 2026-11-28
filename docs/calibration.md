@@ -1,6 +1,6 @@
 # Calibration
 
-Rules version 2026.11.1. Every number on this page was written by `tests/make_docs.py` from the output of real runs. To repeat them, see the end of the page.
+Rules version 2026.11.2. Every number on this page was written by `tests/make_docs.py` from the output of real runs. To repeat them, see the end of the page.
 
 ## Known-good corpus
 
@@ -72,6 +72,10 @@ Changes that do not show as a severity:
 - A server named in an open config file after the plugin itself counts as declared.
 - What a hook starts. A file that a self-starting file hands to an interpreter, starts by its path or imports is judged as self-starting too, and so on down the chain. A file that is only mentioned by name is not followed: the first version of this rule followed mentions, reached hundreds of files in one repository, and put red lines on its tests.
 - A declared installer. A command that writes into the skills folder is a caution. When the skill's capabilities file names that folder, it is a note (SR-DF-020). A component that starts by itself and writes there is a red line either way.
+- Servers named in the code. In JavaScript, TypeScript and shell a call is tied to its address when both sit in one file. A server that is only held in a string, or used from another file, is listed in the label as named in the code, with no call found. XML namespaces, schema ids and licence links are names and are left out. On the corpus 21 of 341 skills and plugins get that line, 7 of them with a server their documents do not mention. Against the run before the change: 0 of 350 units changed verdict, and 2 gained a finding, each a call with an address decided at run time that was not seen before.
+- The capabilities file. It is written by other people, and the first real one in another form (objects and booleans where lists are expected) stopped the contract stage. It is now read as far as it can be, and the report says which fields are not lists (SR-DF-012).
+- A child process and its environment. Copying the environment for a child process is routine. The output of that child was also treated as the environment, so a version stamp read from `git rev-parse` looked like a dump of every variable (SR-DF-018). What is handed over as `env=` now stays with the child.
+- A container command with a setting. `docker run -e KEY=value image:1.2` was read as starting an image called `value`. Only a flag is split at its equals sign now.
 
 ## Shapes taken from published attacks
 
@@ -106,19 +110,23 @@ Unsafe cases not flagged, by category:
 
 ## Our own test skills
 
-`tests/fixtures.py` describes 96 test skills as data. They are written to disk only while a test runs. With the three examples, that is 99.
+`tests/fixtures.py` describes 103 test skills as data. They are written to disk only while a test runs. With the three examples, that is 106.
 
 ## The trial run
 
-The trial has 10 rules of its own, 3 of them red lines, and 27 decoy files. `tests/test_trial.py` builds six test skills at test time (a thief, a polite hook, a hook that never ends, a Node hook, a hook that calls a declared server, and a plain skill given one command) and checks that each rule is triggered by one of them. Where Docker or Podman answers, the tests run in a real container and also check the fences from inside: no network, nothing writable outside the sandbox, not root. Elsewhere they run on a stand-in built from Linux namespaces.
+The trial has 13 rules of its own, 3 of them red lines, and 27 decoy files. `tests/test_trial.py` builds its test skills at test time and checks that each rule is triggered by one of them. Where Docker or Podman answers, the tests run in a real container and also check the fences from inside: no network, nothing writable outside the sandbox, not root. Elsewhere they run on a stand-in built from Linux namespaces.
 
-**The trial rules have not yet been run against the known-good corpus.** That run starts code other people wrote, so it is done only in a real container: `python3 tests/calibrate_trial.py <corpus>`, or the calibration workflow in this repository. Until it has been done, treat a red line from a trial as strong evidence and a caution as a question to ask.
+Run against the known-good corpus in a docker container: 78 of 350 units had something to start, 206 commands were started. Verdicts: caution 3, notes 14, quiet 61. Red-line rules seen: none.
+
+The first run on the corpus gave: caution 17, notes 4, quiet 57. No red line, and too many cautions. It showed four ordinary things judged as cautions: a tool used to run local code (`bun run`) counted as an installer; a package or image pinned to a version, and an installer inside a script the user runs, were judged like an unpinned download at start; reading session transcripts was a caution even for a plugin whose documents say that is its job; and opening a web page counted as contacting a server. Rules SR-TR-011, SR-TR-012 and SR-TR-013 and the list of runtimes came from that run.
+
+The units at caution: `firebase`, `playwright`, `serena`. Each fetches and starts a package with no version when it starts, and each is also a caution in the scan.
 
 ## Speed
 
-One skill through the real command line, with every stage in its own process: median 2.7 seconds, measured on every eighth skill and plugin of the corpus (43 of 341). The largest repository in the corpus, 129 MB, took about half a minute.
+One skill through the real command line, with every stage in its own process: median 2.14 seconds, measured on every eighth skill and plugin of the corpus (43 of 341). The slowest unit, a whole repository, took 20 seconds with the stages in one process.
 
-The check at the start of a session, on an approved skill of 500 files (1.7 MB) with nothing changed: median 72 milliseconds, measured over 15 runs. It compares size and change time and reads a file only when one of them differs.
+The check at the start of a session, on an approved skill of 500 files (1.7 MB) with nothing changed: median 52 milliseconds, measured over 15 runs. It compares size and change time and reads a file only when one of them differs.
 
 ## Repeat it
 

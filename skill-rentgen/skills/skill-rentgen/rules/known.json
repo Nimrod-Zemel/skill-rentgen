@@ -1,5 +1,5 @@
 {
- "rules_version": "2026.11.1",
+ "rules_version": "2026.11.2",
  "common_hosts": [
   "github.com",
   "api.github.com",
@@ -481,6 +481,8 @@
   "repo1.maven.org",
   "download.pytorch.org"
  ],
+ "name_hosts_why": "Addresses that code carries as names: XML namespaces, schema ids, licence and standards links. They are left out of the list of servers named in the code.",
+ "name_hosts": ["www.w3.org", "w3.org", "openoffice.org", "apache.org", "schemas.openxmlformats.org", "schemas.microsoft.com", "purl.org", "json-schema.org", "xmlns.com", "ns.adobe.com", "schema.org", "www.apache.org", "opensource.org", "creativecommons.org", "spdx.org", "www.gnu.org", "semver.org", "www.iana.org", "www.rfc-editor.org", "tools.ietf.org", "datatracker.ietf.org", "xml.org", "www.xml.org", "dublincore.org", "ogp.me", "www.sitemaps.org", "java.sun.com", "xmlpull.org"],
  "code_hosts": [
   "github.com",
   "gitlab.com",

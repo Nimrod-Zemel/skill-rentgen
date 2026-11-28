@@ -207,6 +207,14 @@ def label_lines(label, t):
     if label.get("network_dynamic"):
         hosts.append(ui["net_dyn"])
     lines.append("%s: %s" % (ui["net"], ", ".join(hosts) if hosts else ui["no_net"]))
+    named = label.get("from_code") or []
+    if named:
+        shown = ["%s (%s)" % (_code(n["host"]), ui["declared"] if n["declared"] else ui["undeclared"])
+                 for n in named[:6]]
+        more = max(int(label.get("from_code_total") or 0), len(named)) - len(shown)
+        if more > 0:
+            shown.append(ui["and_more"].format(n=more))
+        lines.append("%s: %s" % (ui["from_code"], ", ".join(shown)))
     outside = label.get("writes_outside_skill_dir") or []
     if outside:
         files = "%s: %s" % (ui["files_out"], ", ".join(_code(p) for p in outside[:4]))
@@ -614,6 +622,9 @@ def run(root, work, opts):
             handle.write(text)
     hosts = ", ".join("%s (%s)" % (n["host"], "declared" if n["declared"] else "undeclared")
                       for n in label.get("network", [])[:3]) or "none found"
+    named = [n["host"] for n in label.get("from_code") or [] if not n["declared"]][:3]
+    if named:
+        hosts += ". Named in the code: " + ", ".join(named)
     red = sum(1 for item in findings if item["red_line"])
     terminal = ["%s  %s  (exit %d)" % (TERMINAL[internal], name, EXIT[internal]),
                 "%d findings, %d red lines. Network: %s" % (len(findings), red, hosts)]

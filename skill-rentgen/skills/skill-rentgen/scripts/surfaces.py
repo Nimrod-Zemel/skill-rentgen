@@ -82,6 +82,16 @@ OTHERSKILL_PY = re.compile(r"^(?:~|\{\})/\.(?:claude|agents|gemini|codex|cursor)
                            r"(?:skills|plugins|agents|commands|hooks)(?:/|$)")
 URL_HOST = re.compile(r"^(?:https?|wss?|ftp)://([^/:\s\"'?#]+)", re.I)
 URL_ANY = re.compile(r"https?://[^\s)>\]\"'`<|\\]+", re.I)
+# A string that begins with an address, and a setting whose name says it holds a host.
+CODE_URL = re.compile(r"""["'`]((?:https?|wss?)://[^\s"'`<>\\]{3,300})""")
+CODE_HOST_KEY = re.compile(
+    r"""\b(?:hostname|host|baseURL|baseUrl|base_url|endpoint|origin)["']?\s*[:=]\s*["'`]"""
+    r"""((?:[a-z0-9-]+\.)+[a-z]{2,24})(?::\d+)?["'`/]""", re.I)
+JS_VAR_URL = re.compile(
+    r"""\b(?:const|let|var)\s+([A-Za-z_$][\w$]{1,60})\s*(?::\s*[\w.<>\[\] |]{1,40})?=\s*"""
+    r"""["'`]((?:https?|wss?)://[^\s"'`$]{3,300})["'`]""")
+JS_NET_FUNCS = (r"fetch|axios(?:\.\w+)?|got(?:\.\w+)?|ky(?:\.\w+)?|request|https?\.(?:get|request)"
+                r"|undici\.(?:request|fetch)|sendBeacon|WebSocket|EventSource")
 VAR_URL = re.compile(r"^\s*(?:export\s+|readonly\s+|local\s+)?([A-Za-z_]\w*)=[\"']?(https?://[^\s\"']+)",
                      re.M)
 PKG_PINNED = re.compile(r"@v?\d+(?:\.\d+)*[\w.+-]*$|==\d|@sha256:|@[0-9a-f]{7,40}$")
@@ -178,6 +188,7 @@ class Collector:
             r"[^\n]{0,260}(?:%s)" % stores, re.M)))
         self.depth = 0
         self.installers = set(known["installer_hosts"])
+        self.names = set(known.get("name_hosts", []))
         self.known = known
         self.obs, self.findings, self.surfaces = [], [], []
         self._seen = set()
@@ -208,6 +219,11 @@ class Collector:
     def is_placeholder(self, host):
         return (not host) or bool(self.placeholder.search(host))
 
+    def name_only(self, host):
+        """True for an address that code carries as a name: an XML namespace,
+        a schema id, a licence link."""
+        return host in self.names
+
     def installer(self, host):
         return any(host == h or host.endswith("." + h) for h in self.installers)
 
@@ -217,6 +233,15 @@ class Collector:
         if lang != "js":
             for name, url in VAR_URL.findall(text):
                 text = re.sub(r"\$\{?%s\}?(?![\w])" % re.escape(name), url, text)
+        else:
+            # A constant that holds an address, used in the same file: put the
+            # address where the name is used, so the call is seen with its host.
+            # Lines keep their numbers.
+            for name, url in JS_VAR_URL.findall(text)[:200]:
+                safe = re.escape(name)
+                text = re.sub(r"\$\{\s*%s\s*\}" % safe, lambda m, u=url: u, text)
+                text = re.sub(r"(\b(?:%s)\s*\(\s*)%s\b(?!\s*[.(\[])" % (JS_NET_FUNCS, safe),
+                              lambda m, u=url: m.group(1) + "'" + u + "'", text)
         in_tests = self.tests(rel)
         for _, kind, regex in patterns:
             for match in regex.finditer(text):
@@ -381,6 +406,9 @@ class Collector:
                 self.add_obs("network", host, rel, number, source=ctx, confidence=confidence)
         elif kind == "network_dyn":
             self.add_obs("network_dyn", "", rel, number, source=ctx, confidence=confidence)
+        elif kind == "network_dyn_wide":
+            if len(line) <= 2000:       # not on a minified line: see the pattern's own note
+                self.add_obs("network_dyn", "", rel, number, source=ctx, confidence=confidence)
         elif kind == "env":
             self.add_obs("env", groups[0] if groups else "", rel, number, source=ctx,
                          confidence=confidence)
@@ -589,8 +617,15 @@ class PyScan(ast.NodeVisitor):
     # ---- the whole environment: copying it for a child process is routine,
     # ---- printing it or sending it is not
     def whole_env(self, node):
-        """True when the expression holds every environment variable."""
-        for sub in ast.walk(node):
+        """True when the expression holds every environment variable.
+
+        The environment that is handed to a child process (`env=`) stays with
+        the child: what the call returns is the child's output, not the
+        environment. Following it there made a version stamp read from
+        `git rev-parse` look like a dump of the environment."""
+        stack = [node]
+        while stack:
+            sub = stack.pop()
             if isinstance(sub, ast.Name) and sub.id in self.envall:
                 return True
             if isinstance(sub, ast.Call):
@@ -599,10 +634,15 @@ class PyScan(ast.NodeVisitor):
                     return True
                 if func == "dict" and sub.args and self.cname(sub.args[0]) == "os.environ":
                     return True
+                stack.append(sub.func)
+                stack.extend(sub.args)
+                stack.extend(k.value for k in sub.keywords if k.arg != "env")
+                continue
             if isinstance(sub, ast.Dict):
                 for key, value in zip(sub.keys, sub.values):
                     if key is None and self.cname(value) == "os.environ":
                         return True
+            stack.extend(ast.iter_child_nodes(sub))
         return isinstance(node, (ast.Name, ast.Attribute)) and self.cname(node) == "os.environ"
 
     def _env_sink(self, node, name, short):
@@ -841,7 +881,16 @@ DOCKER_VALUE_FLAGS = {"-e", "--env", "-v", "--volume", "-p", "--publish", "--nam
 
 
 def _unpinned(command, known):
-    tokens = command.replace("=", " ").split()
+    """The first package or image that is fetched and started without a
+    version, as "runner name". Empty when every one is pinned."""
+    tokens = []
+    for token in command.split():
+        # --flag=value is a flag and its value. KEY=value after -e is one value.
+        if token.startswith("-") and "=" in token:
+            flag, value = token.split("=", 1)
+            tokens += [flag, value] if value else [flag]
+        else:
+            tokens.append(token)
     for index, token in enumerate(tokens):
         base = token.rsplit("/", 1)[-1]
         two = (base + " " + tokens[index + 1]) if index + 1 < len(tokens) else ""
@@ -1240,6 +1289,36 @@ def scan_prose(col, root, rel, text):
                             confidence="low", mode=mode)
 
 
+def scan_code_hosts(col, rel, text, ctx):
+    """Servers that the code names in a string, whether or not a call to
+    them was found.
+
+    WHY: only Python is read as a syntax tree. In the other languages a call
+    is tied to its address when both sit in one file. An address that is held
+    in one place and used in another, or handed to a helper, would otherwise
+    appear nowhere in the report. Naming it costs little; hiding it is how a
+    reader gets "an address decided at run time" for a tool that phones one
+    fixed server."""
+    count = 0
+    for regex in (CODE_URL, CODE_HOST_KEY):
+        for match in regex.finditer(text):
+            line = line_text(text, match.start())
+            stripped = line.lstrip()
+            if stripped.startswith(("//", "* ", "/*", "<!--")) or (
+                    stripped.startswith("#") and not stripped.startswith("#!")):
+                continue
+            value = match.group(1)
+            host = host_of(value) if "://" in value else value.lower()
+            if (not host or "." not in host or col.is_placeholder(host) or is_local_host(host)
+                    or col.name_only(host) or host.endswith((".sock", ".socket"))):
+                continue
+            col.add_obs("code_host", host, rel, line_of(text, match.start()), source=ctx,
+                        confidence="low")
+            count += 1
+            if count >= 60:
+                return
+
+
 def run(root, work, opts):
     intake = load_json(os.path.join(work, "intake.json"))
     structure = load_json(os.path.join(work, "structure.json"))
@@ -1297,6 +1376,8 @@ def run(root, work, opts):
             col.scan_text(text, rel, "js", "code")
         elif kind == "data":
             scan_data(col, rel, text)
+        if kind == "code" and not rel.endswith((".d.ts", ".d.mts", ".d.cts")):
+            scan_code_hosts(col, rel, text, ctx)
         if kind == "doc" or is_doc_path(rel):
             scan_prose(col, root, rel, text)
     if other:

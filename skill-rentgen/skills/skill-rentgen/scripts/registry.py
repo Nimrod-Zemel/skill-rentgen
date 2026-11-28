@@ -310,6 +310,22 @@ def _clean_record(record):
     return out
 
 
+def find_carry():
+    """Kept registry files in the few folders where one may be looked for
+    (rules/places.json). Newest first."""
+    found = []
+    for folder in rule_file("places.json").get("carry_read", []):
+        try:
+            names = sorted(os.listdir(folder))
+        except OSError:
+            continue
+        for name in names:
+            path = os.path.join(folder, name)
+            if name.endswith(CARRY_NAME) and os.path.isfile(path) and not os.path.islink(path):
+                found.append(path)
+    return sorted(found, key=lambda path: -os.path.getmtime(path))
+
+
 def read_carry(path):
     """Read and check a carried registry file. Raises ValueError with a
     plain reason when it is not one, or was damaged."""

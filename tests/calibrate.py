@@ -81,6 +81,10 @@ def main():
                     "repo": repo, "kind": kind, "unit": os.path.relpath(unit, path),
                     "verdict": summary["internal"], "seconds": round(time.time() - started, 3),
                     "files": report["subject"]["files"],
+                    "network": [n["host"] for n in report["label"].get("network", [])],
+                    "named": [n["host"] for n in report["label"].get("from_code", [])
+                              if not n["declared"]],
+                    "named_total": report["label"].get("from_code_total", 0),
                     "findings": [{k: f.get(k) for k in ("rule_id", "severity", "file", "line",
                                                         "snippet", "sub", "host", "stage")}
                                  for f in report["findings"]],

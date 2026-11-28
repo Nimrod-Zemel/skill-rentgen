@@ -37,6 +37,7 @@ import tempfile
 import time
 import uuid
 
+from surfaces import _unpinned
 from common import (SEV_RANK, SKILL_DIR, clean_snippet, finding, is_test_path, load_json,
                     path_matches, read_text, rule_file)
 
@@ -579,10 +580,44 @@ def _shim_hosts(tool, args):
     return hosts
 
 
-def judge(raw, commands, declared_hosts=()):
-    """Turn the runner's description into findings. Returns (findings, notes)."""
+def _first_word(args):
+    for word in args.split():
+        if not word.startswith("-"):
+            return word
+    return ""
+
+
+def disclosed_kinds(root, stage_dir):
+    """The kinds of sensitive file that the skill's own documents say it
+    reads. A skill that analyses your session transcripts and says so is
+    doing its job; one that reads them without a word is not."""
+    spec = rule_file("decoys.json").get("disclosure", {})
+    try:
+        intake = load_json(os.path.join(stage_dir, "intake.json"))
+    except (OSError, ValueError):
+        return set()
+    texts, total = [], 0
+    for entry in intake.get("files", []):
+        if entry.get("kind") != "doc" or is_test_path(entry["p"]) or total > 2000000:
+            continue
+        try:
+            with open(os.path.join(root, entry["p"]), "rb") as handle:
+                text = handle.read(200000).decode("utf-8", "replace")
+        except OSError:
+            continue
+        texts.append(text)
+        total += len(text)
+    low = "\n".join(texts).lower()
+    return {kind for kind, pattern in spec.items() if re.search(pattern, low)}
+
+
+def judge(raw, commands, declared_hosts=(), disclosed=()):
+    """Turn the runner's description into findings. Returns (findings, notes).
+    `disclosed` holds the kinds of sensitive file the documents say are read."""
     decoys = rule_file("decoys.json")
     classes, groups = decoys["kinds"], decoys["shims"]
+    runtimes, fetchers = decoys.get("runtimes", {}), decoys.get("fetch_and_run", {})
+    runners = rule_file("known.json")["unpinned_runners"]
     by_id = {c["id"]: c for c in commands}
     home, work = raw.get("home") or "", raw.get("work") or ""
     findings, notes = [], {"config_read": [], "own_writes": 0, "local": []}
@@ -641,7 +676,7 @@ def judge(raw, commands, declared_hosts=()):
         elif group == "secret":
             add("SR-TR-001" if what == "read" else "SR-TR-006", command_id, shown, sub=kind)
         elif group == "sensitive" and what == "read":
-            add("SR-TR-006", command_id, shown, sub=kind)
+            add("SR-TR-012" if kind in disclosed else "SR-TR-006", command_id, shown, sub=kind)
         elif group == "config" and what == "read":
             notes["config_read"].append(shown)
     leaks = {}
@@ -670,15 +705,29 @@ def judge(raw, commands, declared_hosts=()):
                 hosts.extend((host, command_id, shown) for host in found)
             else:
                 add("SR-TR-003", command_id, shown, sub="tool")
-        elif tool in groups["install"]:
-            add("SR-TR-005", command_id, shown)
+        elif tool in groups["install"] or _first_word(args) in fetchers.get(tool, ()):
+            first = _first_word(args)
+            if tool in runtimes and first not in runtimes[tool]:
+                # Used to run local code, not to install. The sandbox has no such program.
+                add("SR-TR-009", command_id, tool, sub="missing")
+                continue
+            # A package or image that is fetched and started in one step, with
+            # every reference pinned to a version, is what a careful author writes.
+            fetch = tool in runners or ("%s %s" % (tool, first)) in runners
+            pinned = fetch and not _unpinned(shown, rule_file("known.json"))
+            by_hand = (by_id.get(command_id) or {}).get("kind") in ("script", "run")
+            if by_hand or pinned:
+                add("SR-TR-011", command_id, shown, sub="script" if by_hand else "pinned")
+            else:
+                add("SR-TR-005", command_id, shown)
         elif tool in groups["persist"]:
             add("SR-TR-004", command_id, shown, sub="persist")
         elif tool in groups["keychain"]:
             add("SR-TR-001", command_id, shown, sub="keychain")
         elif tool in ("open", "xdg-open"):
             found = _shim_hosts(tool, args)
-            hosts.extend((host, command_id, shown) for host in found)
+            for host in found[:3]:
+                add("SR-TR-013", command_id, shown, host=clean_snippet(host, 80))
             if not found:
                 add("SR-TR-010", command_id, shown)
         else:
@@ -874,6 +923,7 @@ def run(root, stage_dir, name, declared_hosts=(), extra=(), scripts=True, prefer
                              for c in commands]
         if not commands:
             raise NotRun("nothing_to_run")
+        disclosed = disclosed_kinds(root, stage_dir)
         if not engine:
             state, engine_name, engine_path = engine_state(prefer)
             if state == "none":
@@ -911,7 +961,7 @@ def run(root, stage_dir, name, declared_hosts=(), extra=(), scripts=True, prefer
         job = build_job(commands, timeout, total)
         raw = run_container(engine, image_name, skill_dir, tool_dir, job, total + 90, scratch,
                             host)
-        findings, notes = judge(raw, commands, declared_hosts)
+        findings, notes = judge(raw, commands, declared_hosts, disclosed)
         trial.update({"status": "ran", "findings": tidy(findings), "notes": notes,
                       "results": [{k: r.get(k) for k in ("id", "status", "exit", "seconds")}
                                   for r in raw["commands"] if isinstance(r, dict)],

@@ -1,5 +1,5 @@
 {
- "rules_version": "2026.11.1",
+ "rules_version": "2026.11.2",
  "hedges": "(?:\\b(?:unless|except|optional(?:ly)?|by\\s+default|when\\s+you|if\\s+you|if\\s+(?:the|a|an)\\b|only\\s+when|apart\\s+from|other\\s+than|besides|mostly|can\\s+(?:also\\s+)?work|should|may|might|could|aims?\\s+to|tries\\s+to|not\\s+(?:fully|completely|entirely))\\b)|\\b(?:needs?|requires?|uses?)\\s+(?:the\\s+)?(?:network|internet)\\b|\\bnetwork\\s+access\\b|\\b(?:only|just)\\s+(?:to|for|when|if)\\b|\\boffline\\s+(?:for|when|if|once|after|mode)\\b|\\b(?:for|with)\\s+local\\b|\\bafter\\s+(?:the\\s+)?(?:first|initial)\\b",
  "claims": [
   {

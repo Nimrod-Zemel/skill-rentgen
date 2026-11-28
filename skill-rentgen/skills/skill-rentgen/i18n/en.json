@@ -146,8 +146,8 @@
   },
   "SR-DF-012": {
    "head": "",
-   "title": "The capabilities file is not valid",
-   "you": "The declaration was not taken into account."
+   "title": "The capabilities file is not valid, or not in the expected form",
+   "you": "A file that cannot be read was not taken into account. A file in another form was read as far as it could be; the fields named here should be lists."
   },
   "SR-DF-013": {
    "head": "",
@@ -469,6 +469,21 @@
    "title": "Tried to change the system (administrator rights, desktop scripting, quarantine, containers)",
    "you": "These are the steps that take a program past the usual fences of your computer."
   },
+  "SR-TR-011": {
+   "head": "",
+   "title": "Called an installer where you can see it coming",
+   "you": "Either a package or image pinned to one version, fetched when the skill starts, or an installer inside a script that the docs tell you to run. What it installs was not scanned."
+  },
+  "SR-TR-012": {
+   "head": "",
+   "title": "Read sensitive files that its own documents say it reads",
+   "you": "The skill says it works with these files (your session transcripts, shell history or project keys), and it did read them. Decide whether you want that."
+  },
+  "SR-TR-013": {
+   "head": "",
+   "title": "Tried to open a web page in your browser",
+   "you": "Nothing was sent by the skill itself. On your computer the page would open; look at the address before you trust what it shows."
+  },
   "SR-TX-001": {
    "head": "",
    "title": "An invisible character in the text",
@@ -650,6 +665,7 @@
  },
  "ui": {
   "all": "All findings",
+  "and_more": "and {n} more",
   "auto": "Runs on its own",
   "auto_none": "no auto-run components",
   "b_asks": "asks before acting",
@@ -676,6 +692,7 @@
   "files_in": "writes only in the working folder",
   "files_none": "no file writes found",
   "files_out": "also writes outside its own folder",
+  "from_code": "Servers named in the code, with no call to them found",
   "from_config": "From config files",
   "from_text": "From the instructions, not the code",
   "hashes": "Fingerprints",

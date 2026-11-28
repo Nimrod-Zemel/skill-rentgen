@@ -43,7 +43,7 @@ This skill reads secret files from your computer.
 - Analysis depth: Python by AST: 1 files. Patterns only: 0. Not analysed: 0.
 - the skill ships no capabilities file (this is not held against it)
 - Fingerprints: `0719ad707aeffe257373d702f9251cd4ff2804336807d3f775ff0d858c32048a` (sha256-filemap-v1)
-- Files scanned: 5. skill-rentgen 0.1.0, rules version 2026.11.1. Install tier A: Python only, no network
+- Files scanned: 5. skill-rentgen 0.1.0, rules version 2026.11.2. Install tier A: Python only, no network
 
 ### All findings
 

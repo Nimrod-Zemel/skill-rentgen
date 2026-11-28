@@ -33,6 +33,37 @@ STOP = {"api", "www", "mcp", "app", "com", "org", "net", "io", "dev", "co", "ai"
         "docs", "static", "files", "data", "cloud", "service", "services", "server"}
 
 
+LISTED = ("hooks", "mcp_servers", "monitors", "bin", "modules", "runtime_installs",
+          "writes_outside_skill_dir", "env_reads", "subprocess", "paid_services")
+
+
+def _as_list(value):
+    """(items, in the expected form). A capability is declared as a list.
+
+    WHY: this file is written by other people, and a shape nobody expected
+    must never stop the scan. Any other shape is read as far as it can be:
+    a string is one item, an object gives the lists it holds, and a bare
+    `true` means "yes, without saying what"."""
+    if value is None:
+        return [], True
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, (str, dict))][:200], all(
+            isinstance(item, (str, dict)) for item in value)
+    if isinstance(value, str):
+        return ([value] if value.strip() else []), False
+    if isinstance(value, dict):
+        items = []
+        for inner in value.values():
+            if isinstance(inner, list):
+                items += [item for item in inner if isinstance(item, (str, dict))]
+        if not items and value.get("value") not in (None, False, "", 0, [], {}):
+            items = [str(value.get("note") or "yes")]
+        return items[:200], False
+    if value is True:
+        return ["yes"], False
+    return [], False
+
+
 def _manifest(root, intake, findings):
     declared = {"present": False, "network": set(), "raw": {}}
     for entry in intake["files"]:
@@ -47,14 +78,28 @@ def _manifest(root, intake, findings):
             declared["invalid"] = True
             continue
         declared["present"] = True
-        for item in data.get("network") or []:
+        odd = []
+        network = data.get("network")
+        if isinstance(network, dict):       # an object: take the lists whose name speaks of hosts
+            odd.append("network")
+            network = [host for key, inner in network.items() if isinstance(inner, list)
+                       and "host" in str(key).lower() for host in inner]
+        hosts, plain = _as_list(network)
+        if not plain and "network" not in odd:
+            odd.append("network")
+        for item in hosts:
             host = item.get("host") if isinstance(item, dict) else item
-            if isinstance(host, str):
-                declared["network"].add(host.lower())
-        for key in ("hooks", "mcp_servers", "monitors", "bin", "modules", "runtime_installs",
-                    "writes_outside_skill_dir", "env_reads", "subprocess", "paid_services"):
-            if data.get(key):
-                declared["raw"][key] = data[key]
+            if isinstance(host, str) and host.strip():
+                declared["network"].add(host.strip().lower())
+        for key in LISTED:
+            items, plain = _as_list(data.get(key))
+            if not plain and data.get(key) is not False:
+                odd.append(key)
+            if items:
+                declared["raw"][key] = items
+        if odd:
+            # Read as far as it could be, and said: the next tool may not be as forgiving.
+            findings.append(finding("SR-DF-012", entry["p"], 1, ", ".join(odd[:6]), sub="shape"))
     return declared
 
 
@@ -218,13 +263,24 @@ def run(root, work, opts):
         if not how and len([n for n in network if not n["declared"]]) <= 5:
             findings.append(finding("SR-DF-004", obs["file"], obs["line"], host,
                                     obs["confidence"], host=host))
+    # Servers the code names in a string and that no call was tied to.
+    in_code = []
+    for obs in code:
+        host = obs["value"]
+        if obs["kind"] != "code_host" or host in seen_hosts or any(n["host"] == host for n in in_code):
+            continue
+        how = _host_declared(host, declared, docs_low, set(name_words), known)
+        in_code.append({"host": host, "declared": bool(how), "declared_by": how,
+                      "evidence": "%s:%d" % (obs["file"], obs["line"])})
+    in_code.sort(key=lambda item: item["declared"])
     dynamic = [o for o in code if o["kind"] == "network_dyn"]
     seen_dyn = [o for o in dynamic if not o.get("guess")]
     if seen_dyn:
         first = seen_dyn[0]
         talks = bool(NET_WORDS.search(docs_low)) or declared["present"]
         findings.append(finding("SR-DF-011" if talks else "SR-DF-001", first["file"],
-                                first["line"], "", first["confidence"]))
+                                first["line"], "", first["confidence"],
+                                named=[n["host"] for n in in_code if not n["declared"]][:5]))
 
     kinds = {}
     for surface in auto:
@@ -251,7 +307,8 @@ def run(root, work, opts):
     instruction_docs |= {a["file"] for g in ("agents", "commands") for a in structure.get(g, [])}
     flagged = set()
     for obs in live:
-        if obs["kind"] not in ("network", "config_url", "mention", "remote_exec", "registry"):
+        if obs["kind"] not in ("network", "config_url", "mention", "remote_exec", "registry",
+                               "code_host"):
             continue
         if obs["kind"] == "mention" and obs["file"] not in instruction_docs:
             continue
@@ -322,7 +379,8 @@ def run(root, work, opts):
         first = acting[0]
         findings.append(finding("SR-DF-013", first["file"], first["line"],
                                 ", ".join(connectors[:6]), "low", names=connectors[:10]))
-    if declared["network"] and not network and not dynamic:
+    if declared["network"] and not network and not dynamic and not any(
+            n["declared_by"] == "capabilities" for n in in_code):
         findings.append(finding("SR-DF-006", "", 0, ", ".join(sorted(declared["network"]))[:100]))
 
     promises = _claims(root, structure, docs, observations, findings)
@@ -356,6 +414,7 @@ def run(root, work, opts):
     skill_texts = [docs.get(s["file"], "") for s in structure.get("skills", [])]
     label = {
         "network": network[:12], "network_dynamic": bool(dynamic),
+        "from_code": in_code[:12], "from_code_total": len(in_code),
         "writes_outside_skill_dir": outside[:8],
         "declared_writes": [str(item)[:120] for item in
                             (declared["raw"].get("writes_outside_skill_dir") or [])[:4]],

@@ -40,7 +40,7 @@ This skill sends information to a server its docs never mention.
 - Analysis depth: Python by AST: 1 files. Patterns only: 0. Not analysed: 0.
 - the skill ships no capabilities file (this is not held against it)
 - Fingerprints: `e6ad43c7c42cdf370834394a0e9cdd45aedfebd138b0e2ebdb15d3f5da630304` (sha256-filemap-v1)
-- Files scanned: 3. skill-rentgen 0.1.0, rules version 2026.11.1. Install tier A: Python only, no network
+- Files scanned: 3. skill-rentgen 0.1.0, rules version 2026.11.2. Install tier A: Python only, no network
 
 ### All findings
 

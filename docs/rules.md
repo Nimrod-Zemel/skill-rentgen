@@ -1,6 +1,6 @@
 # Rules
 
-Rules version 2026.11.1. Written by `tests/make_docs.py` from the rules files and the language files.
+Rules version 2026.11.2. Written by `tests/make_docs.py` from the rules files and the language files.
 
 | Id | Severity | What it means | בעברית |
 | --- | --- | --- | --- |
@@ -54,7 +54,7 @@ Rules version 2026.11.1. Written by `tests/make_docs.py` from the rules files an
 | SR-DF-005 | medium | Installs packages at run time without saying so | מתקין חבילות בזמן ריצה בלי לציין זאת |
 | SR-DF-009 | medium | Reads a .env file | קורא קובץ env |
 | SR-DF-010 | medium | Refers to a path of secret files | מתייחס לנתיב של קובצי סודות |
-| SR-DF-012 | medium | The capabilities file is not valid | קובץ הצהרת היכולות לא תקין |
+| SR-DF-012 | medium | The capabilities file is not valid, or not in the expected form | קובץ הצהרת היכולות לא תקין, או לא בצורה המצופה |
 | SR-DF-015 | medium | Reads every environment variable | קורא את כל משתני הסביבה |
 | SR-DF-020 | medium | Installs or changes skills or agent settings, as its capabilities file says | מתקין או משנה סקילים או הגדרות של הסוכן, כפי שכתוב בקובץ היכולות שלו |
 | SR-IN-006 | medium | Contains an archive that was not opened | מכיל קובץ ארכיון שלא נפתח |
@@ -103,5 +103,8 @@ These describe what a skill's own commands did inside the sandbox, not what its 
 | SR-TR-006 | high | Looked at sensitive files (project keys, shell history, the conversation) or looked for secrets | הסתכל בקבצים רגישים (מפתחות הפרויקט, היסטוריית הטרמינל, השיחה) או חיפש סודות |
 | SR-TR-010 | high | Tried to change the system (administrator rights, desktop scripting, quarantine, containers) | ניסה לשנות את המערכת (הרשאות מנהל, שליטה בשולחן העבודה, הסרת הסגר, קונטיינרים) |
 | SR-TR-007 | medium | Wrote or removed files in your home or project folder | כתב או מחק קבצים בתיקיית הבית או בתיקיית הפרויקט |
+| SR-TR-011 | medium | Called an installer where you can see it coming | קרא לתוכנת התקנה במקום שאפשר לצפות אותו |
+| SR-TR-012 | medium | Read sensitive files that its own documents say it reads | קרא קבצים רגישים שהתיעוד שלו אומר שהוא קורא |
+| SR-TR-013 | medium | Tried to open a web page in your browser | ניסה לפתוח דף אינטרנט בדפדפן שלך |
 | SR-TR-008 | low | Tried to reach a server it declares | ניסה לפנות לשרת שהוא מצהיר עליו |
 | SR-TR-009 | info | Part of the run could not be observed | חלק מהריצה לא נצפה |

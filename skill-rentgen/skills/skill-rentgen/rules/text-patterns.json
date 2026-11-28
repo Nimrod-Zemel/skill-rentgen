@@ -1,5 +1,5 @@
 {
- "rules_version": "2026.11.1",
+ "rules_version": "2026.11.2",
  "text": {
   "conceal": [
    "\\b(?:do\\s+not|don'?t|never)\\s+(?:tell|inform|notify|alert|warn)\\s+(?:the\\s+)?(?:user|human|operator)\\s*(?:about\\b|of\\s+(?:this|these|that|the)\\b|that\\s+(?:you|we|i|this|the|it|these|any)\\b|[.!;]|$)",

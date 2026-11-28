@@ -1,5 +1,5 @@
 {
- "rules_version": "2026.11.1",
+ "rules_version": "2026.11.2",
  "note": "Shell and JavaScript are analysed by these patterns only. Findings carry confidence low.",
  "shell": [
   {
@@ -172,12 +172,18 @@
   {
    "id": "js.net",
    "obs": "network",
-   "re": "\\b(?:fetch|axios(?:\\.\\w+)?|got(?:\\.\\w+)?|request|https?\\.(?:get|request)|WebSocket|EventSource)\\s*\\(\\s*[\\\"'`](https?://[^\\\"'`\\s]+|wss?://[^\\\"'`\\s]+)"
+   "re": "\\b(?:fetch|axios(?:\\.\\w+)?|got(?:\\.\\w+)?|ky(?:\\.\\w+)?|request|https?\\.(?:get|request)|undici\\.(?:request|fetch)|sendBeacon|WebSocket|EventSource)\\s*\\(\\s*[\\\"'`](https?://[^\\\"'`\\s]+|wss?://[^\\\"'`\\s]+)"
   },
   {
    "id": "js.net-dyn",
    "obs": "network_dyn",
    "re": "\\b(?:fetch|axios\\.(?:get|post|put|request)|https?\\.(?:get|request))\\s*\\(\\s*(?![\\\"'`])[A-Za-z_$]"
+  },
+  {
+   "id": "js.net-dyn-wide",
+   "obs": "network_dyn_wide",
+   "why": "More ways to call out with an address decided at run time: a template string, an options object, other clients, sockets. Not applied to minified lines, where these shapes match library internals.",
+   "re": "\\b(?:fetch|axios(?:\\.(?:get|post|put|patch|delete|head|request))?|got(?:\\.(?:get|post|put|patch|delete|stream))?|ky(?:\\.(?:get|post|put|patch|delete))?|https?\\.(?:get|request)|undici\\.(?:request|fetch)|sendBeacon|new\\s+WebSocket|new\\s+EventSource)\\s*\\(\\s*(?:[A-Za-z_$]|\\{|`(?!(?:https?|wss?)://))"
   },
   {
    "id": "js.cred-read",
